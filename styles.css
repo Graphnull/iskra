@@ -63,8 +63,8 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
   position: absolute;
   z-index: 1;
   top: 0;
-  left: calc(var(--position) * 100% / 7 - 3.35%);
-  width: 6.7%;
+  left: calc(var(--position) * 100% / var(--white-count) - 23.5% / var(--white-count));
+  width: calc(47% / var(--white-count));
   height: 61%;
   padding: 0 0 10px;
   display: flex;
