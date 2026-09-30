@@ -163,3 +163,11 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 .drum-cell.is-step { border-color: #c0def0; background: #577087; }
 .drum-cell.is-on.is-step { background: #fff0c5; border-color: #fff5dd; box-shadow: 0 0 8px #ffe1a0; }
 .drum-cell:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 1px; }
+
+.harmony-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
+.harmony-controls label { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #b5c4d4; }
+.harmony-controls select, .harmony-controls input { min-width: 0; height: 24px; border: 1px solid #566476; border-radius: 6px; background: #222e3e; color: #eaf1f8; font: inherit; font-size: 10px; padding: 0 3px; }
+.harmony-controls input { width: 39px; }
+.harmony-controls select { width: 100%; }
+.harmony-controls :is(select, input):focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
+.light-grid { grid-template-columns: 22px repeat(16, minmax(0, 1fr)); }

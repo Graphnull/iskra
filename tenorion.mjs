@@ -1,10 +1,7 @@
 import { createTransport, boundaryAfter, wallTime } from "./transport.mjs?v=2";
+import { SCALES, pitchForRow, noteLabel } from "./scales.mjs?v=4";
 export const SIZE = 16;
-const SCALE = [0, 2, 4, 7, 9];
-export function rowMidi(row) {
-  const degree = SIZE - 1 - row;
-  return 48 + SCALE[degree % SCALE.length] + 12 * Math.floor(degree / SCALE.length);
-}
+export function rowMidi(row, settings) { return pitchForRow(row, settings); }
 export function stepDuration(bpm) { return 60 / bpm / 4; }
 
 if (typeof document !== "undefined") {
@@ -20,6 +17,11 @@ if (typeof document !== "undefined") {
         <button type="button" id="clear" aria-label="Очистить сетку">Сброс</button>
       </div>
 
+      <div class="harmony-controls">
+        <select id="scale" aria-label="Гамма">${Object.entries(SCALES).map(([id, scale]) => `<option value="${id}">${scale.name}</option>`).join("")}</select>
+        <label>Сдвиг <input id="transpose" type="number" min="-12" max="12" value="0" aria-label="Транспозиция в полутонах"></label>
+        <label>Октава <input id="octave" type="number" min="-2" max="2" value="0" aria-label="Сдвиг октавы"></label>
+      </div>
       <div class="light-grid" role="group" aria-label="Сетка нот: 16 шагов, 16 высот"></div>
       <p class="sequencer-hint">Огни — ноты · слева направо — время</p>
     </main>`;
@@ -27,6 +29,21 @@ if (typeof document !== "undefined") {
   const play = document.getElementById("play");
   const tempo = document.getElementById("tempo");
   const instrument = document.getElementById("instrument");
+  const scaleControl = document.getElementById("scale");
+  const transposeControl = document.getElementById("transpose");
+  const octaveControl = document.getElementById("octave");
+  let harmony = { scale: "pentatonic", transpose: 0, octave: 0 };
+  const harmonyKey = "tenorion-harmony-v1";
+  for (const storageName of ["sessionStorage", "localStorage"]) {
+    try {
+      const saved = JSON.parse(window[storageName].getItem(harmonyKey));
+      if (saved && Object.hasOwn(SCALES, saved.scale) && Number.isInteger(saved.transpose) && Math.abs(saved.transpose) <= 12
+        && Number.isInteger(saved.octave) && Math.abs(saved.octave) <= 2) { harmony = saved; break; }
+    } catch {}
+  }
+  scaleControl.value = harmony.scale;
+  transposeControl.value = harmony.transpose;
+  octaveControl.value = harmony.octave;
   const pattern = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
   const patternKey = "tenorion-pattern-v1";
   function savePattern() {
@@ -70,7 +87,7 @@ if (typeof document !== "undefined") {
     cell.setAttribute("aria-pressed", String(enabled));
   }
   for (let row = 0; row < SIZE; row++) {
-    const noteName = `${["C", "D", "E", "G", "A"][(SIZE - 1 - row) % 5]}${Math.floor(rowMidi(row) / 12) - 1}`;
+    const noteName = noteLabel(rowMidi(row, harmony));
     const label = document.createElement("span");
     label.className = "row-note";
     label.textContent = noteName;
@@ -105,6 +122,31 @@ if (typeof document !== "undefined") {
     }
   }
 
+  function updateHarmony() {
+    harmony = {
+      scale: scaleControl.value,
+      transpose: Math.min(12, Math.max(-12, Math.round(Number(transposeControl.value) || 0))),
+      octave: Math.min(2, Math.max(-2, Math.round(Number(octaveControl.value) || 0))),
+    };
+    transposeControl.value = harmony.transpose;
+    octaveControl.value = harmony.octave;
+    const labels = grid.querySelectorAll(".row-note");
+    for (let row = 0; row < SIZE; row++) {
+      const name = noteLabel(rowMidi(row, harmony));
+      labels[row].textContent = name;
+      for (let column = 0; column < SIZE; column++) cells[row * SIZE + column].setAttribute("aria-label", `Шаг ${column + 1}, нота ${name}`);
+    }
+    const saved = JSON.stringify(harmony);
+    try { sessionStorage.setItem(harmonyKey, saved); } catch {}
+    try { localStorage.setItem(harmonyKey, saved); } catch {}
+    resetSchedule();
+  }
+  scaleControl.addEventListener("change", updateHarmony);
+  for (const control of [transposeControl, octaveControl]) {
+    control.addEventListener("change", updateHarmony);
+    control.addEventListener("blur", updateHarmony);
+  }
+
   const savedPattern = readPattern();
   if (savedPattern) {
     for (let row = 0; row < SIZE; row++) for (let column = 0; column < SIZE; column++) setCell(row, column, savedPattern[row][column]);
@@ -123,7 +165,7 @@ if (typeof document !== "undefined") {
     const preset = presets[instrument.value];
     oscillator.type = preset.type;
     if (preset.harmonics) oscillator.setPeriodicWave(context.createPeriodicWave(new Float32Array(preset.harmonics.length + 1), new Float32Array([0, ...preset.harmonics])));
-    oscillator.frequency.value = 440 * 2 ** ((rowMidi(row) - 69) / 12);
+    oscillator.frequency.value = 440 * 2 ** ((rowMidi(row, harmony) - 69) / 12);
     gain.gain.setValueAtTime(0.0001, time);
     gain.gain.exponentialRampToValueAtTime(level, time + preset.attack);
     gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay);
