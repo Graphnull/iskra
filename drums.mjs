@@ -1,3 +1,5 @@
+import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
+import { drumForMidi, DRUM_BINDINGS } from "./drum-notes.mjs?v=6";
 import { createTransport, boundaryAfter, wallTime } from './transport.mjs?v=2';
 
 const TRACKS = ['Бочка', 'Снейр', 'Хлопок', 'Хэт', 'Откр. хэт', 'Том', 'Крэш', 'Рим'];
@@ -46,7 +48,7 @@ for (let column = 0; column < STEPS; column++) {
 for (let row = 0; row < TRACKS.length; row++) {
   const label = document.createElement('span');
   label.className = 'drum-track-name';
-  label.textContent = TRACKS[row];
+  label.innerHTML = `${TRACKS[row]}<small>${DRUM_BINDINGS[row].note} · ${DRUM_BINDINGS[row].key}</small>`;
   label.setAttribute('aria-hidden', 'true');
   grid.append(label);
   for (let column = 0; column < STEPS; column++) {
@@ -164,12 +166,7 @@ function stop() {
   play.textContent = '▶ Играть';
   play.setAttribute('aria-pressed', 'false');
 }
-play.addEventListener('click', async () => {
-  if (starting) return;
-  if (running) return stop();
-  starting = true;
-  play.disabled = true;
-  try {
+async function ensureAudio() {
     context ??= new (window.AudioContext || window.webkitAudioContext)();
     if (!output) {
       const compressor = context.createDynamicsCompressor();
@@ -183,6 +180,18 @@ play.addEventListener('click', async () => {
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     }
     await context.resume();
+}
+mountLiveKeyboard({
+  async onNoteOn(key) { await ensureAudio(); hit(drumForMidi(key.midi), context.currentTime); },
+  labelFor: key => `${key.note}${key.octave} · ${TRACKS[drumForMidi(key.midi)]}`,
+});
+play.addEventListener('click', async () => {
+  if (starting) return;
+  if (running) return stop();
+  starting = true;
+  play.disabled = true;
+  try {
+    await ensureAudio();
     running = true;
     transport.refresh();
     cursor = wallTime() + 35;

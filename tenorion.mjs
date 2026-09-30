@@ -1,3 +1,4 @@
+import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
 import { createTransport, boundaryAfter, wallTime } from "./transport.mjs?v=2";
 import { SCALES, pitchForRow, noteLabel } from "./scales.mjs?v=4";
 export const SIZE = 16;
@@ -140,6 +141,7 @@ if (typeof document !== "undefined") {
     try { sessionStorage.setItem(harmonyKey, saved); } catch {}
     try { localStorage.setItem(harmonyKey, saved); } catch {}
     resetSchedule();
+    player.refreshLabels();
   }
   scaleControl.addEventListener("change", updateHarmony);
   for (const control of [transposeControl, octaveControl]) {
@@ -153,7 +155,12 @@ if (typeof document !== "undefined") {
     savePattern();
   }
 
-  function sound(row, time, level) {
+  async function ensureAudio() {
+    context ??= new (window.AudioContext || window.webkitAudioContext)();
+    if (!master) { master = context.createGain(); master.gain.value = 0.65; master.connect(context.destination); }
+    await context.resume();
+  }
+  function soundMidi(midi, time, level, live = false) {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     const presets = {
@@ -165,20 +172,35 @@ if (typeof document !== "undefined") {
     const preset = presets[instrument.value];
     oscillator.type = preset.type;
     if (preset.harmonics) oscillator.setPeriodicWave(context.createPeriodicWave(new Float32Array(preset.harmonics.length + 1), new Float32Array([0, ...preset.harmonics])));
-    oscillator.frequency.value = 440 * 2 ** ((rowMidi(row, harmony) - 69) / 12);
+    oscillator.frequency.value = 440 * 2 ** ((midi - 69) / 12);
     gain.gain.setValueAtTime(0.0001, time);
     gain.gain.exponentialRampToValueAtTime(level, time + preset.attack);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay);
+    if (live) gain.gain.exponentialRampToValueAtTime(level * 0.3, time + 2);
+    else gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay);
     const filter = context.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.value = instrument.value === "pluck" ? 1800 : 7000;
     oscillator.connect(filter).connect(gain).connect(master);
     oscillator.start(time);
-    oscillator.stop(time + preset.decay + 0.05);
-    const voice = { oscillator, gain, time };
+    if (!live) oscillator.stop(time + preset.decay + 0.05);
+    const voice = { oscillator, gain, time, live };
     voices.add(voice);
     oscillator.onended = () => { voices.delete(voice); oscillator.disconnect(); filter.disconnect(); gain.disconnect(); };
+    return voice;
   }
+  const player = mountLiveKeyboard({
+    async onNoteOn(key) {
+      await ensureAudio();
+      return soundMidi(key.midi + harmony.transpose + harmony.octave * 12, context.currentTime, 0.16, true);
+    },
+    onNoteOff(voice) {
+      if (!voice) return;
+      voice.gain.gain.cancelScheduledValues(context.currentTime);
+      voice.gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.12);
+      voice.oscillator.stop(context.currentTime + 0.75);
+    },
+    labelFor: key => noteLabel(key.midi + harmony.transpose + harmony.octave * 12),
+  });
   function schedule() {
     const now = wallTime();
     cursor = Math.max(cursor, now + 10);
@@ -188,7 +210,7 @@ if (typeof document !== "undefined") {
       const nextTime = context.currentTime + (boundary.time - now) / 1000;
       const column = ((boundary.step % SIZE) + SIZE) % SIZE;
       const rows = pattern.flatMap((row, index) => row[column] ? [index] : []);
-      for (const row of rows) sound(row, nextTime, 0.22 / Math.max(1, rows.length));
+      for (const row of rows) soundMidi(rowMidi(row, harmony), nextTime, 0.22 / Math.max(1, rows.length));
       const visual = setTimeout(() => {
         visuals.delete(visual);
         for (const cell of cells) cell.classList.toggle("is-step", Number(cell.dataset.column) === column);
@@ -203,6 +225,7 @@ if (typeof document !== "undefined") {
     for (const visual of visuals) clearTimeout(visual);
     visuals.clear();
     for (const voice of voices) {
+      if (voice.live) continue;
       voice.gain.gain.cancelScheduledValues(context.currentTime);
       voice.gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.015);
       voice.oscillator.stop(context.currentTime + 0.05);
@@ -217,9 +240,7 @@ if (typeof document !== "undefined") {
     starting = true;
     play.disabled = true;
     try {
-      context ??= new (window.AudioContext || window.webkitAudioContext)();
-      if (!master) { master = context.createGain(); master.gain.value = 0.65; master.connect(context.destination); }
-      await context.resume();
+      await ensureAudio();
       running = true;
       transport.refresh();
       cursor = wallTime() + 35;

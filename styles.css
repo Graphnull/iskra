@@ -171,3 +171,17 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 .harmony-controls select { width: 100%; }
 .harmony-controls :is(select, input):focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
 .light-grid { grid-template-columns: 22px repeat(16, minmax(0, 1fr)); }
+
+.live-actions { display: flex; align-items: center; gap: 5px; }
+.live-actions button { height: 24px; border: 1px solid #566476; border-radius: 6px; background: #222e3e; color: #eaf1f8; padding: 0 7px; font: inherit; font-size: 10px; cursor: pointer; }
+.live-focus { display: flex; align-items: center; gap: 5px; }
+.live-focus.is-focused .focus-dot { background: #a8efae; box-shadow: 0 0 6px #a8efae66; }
+.live-keys { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+.live-keys .keyboard { height: auto; flex: 1; min-height: 0; }
+.live-keys .key.black { display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 3px; }
+.live-keys .key.black .note { display: none; }
+.live-keys .key.white .note { font-size: 8px; max-width: 100%; overflow: hidden; }
+.drum-track-name small { font-size: 7px; color: #8394aa; }
+.drum-track-name { align-content: center; }
+.live-actions button:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
+[hidden] { display: none !important; }
