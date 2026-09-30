@@ -118,7 +118,7 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 .tempo { display: flex; align-items: center; gap: 4px; margin-right: auto; color: #b5c4d4; font-size: 11px; }
 .tempo input { width: 48px; padding: 2px 4px; }
 .light-grid {
-  width: min(100%, max(160px, calc(100dvh - 130px)), 420px);
+  width: min(100%, max(160px, calc(100dvh - 158px)), 420px);
   aspect-ratio: 1; display: grid; grid-template-columns: repeat(16, 1fr);
   grid-template-rows: repeat(16, 1fr); gap: 3px; margin: 0 auto;
   padding: 8px; border: 1px solid #526072; border-radius: 12px;
@@ -134,6 +134,10 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 .light-cell.is-on.is-step { background: #fffbe1; border-color: white; box-shadow: 0 0 10px #edffb7; }
 .light-cell:focus-visible, .sequencer-controls button:focus-visible, .tempo input:focus-visible, .mode-link:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
 .sequencer-hint { margin: 6px 0 0; color: #b5c4d4; font-size: 10px; line-height: 12px; text-align: center; }
+.instrument-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; font-size: 10px; color: #b5c4d4; }
+.instrument-controls select { height: 22px; max-width: 135px; background: #222e3e; color: #eaf1f8; border: 1px solid #566476; border-radius: 6px; font: inherit; }
+.instrument-controls select:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
+#sync-status { font-size: 9px; color: #b4e5c1; }
 @media (max-width: 400px), (max-height: 400px) {
   .tenorion { min-height: 100dvh; border-radius: 0; border-left: 0; border-right: 0; }
 }

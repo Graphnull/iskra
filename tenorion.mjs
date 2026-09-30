@@ -1,3 +1,4 @@
+import { createTransport, boundaryAfter, wallTime } from "./transport.mjs";
 export const SIZE = 16;
 const SCALE = [0, 2, 4, 7, 9];
 export function rowMidi(row) {
@@ -15,20 +16,36 @@ if (typeof document !== "undefined") {
       <div class="sequencer-controls">
         <button type="button" id="play" aria-pressed="false">▶ Играть</button>
         <label class="tempo">Темп <input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
-        <button type="button" id="example">Пример</button>
         <button type="button" id="clear" aria-label="Очистить сетку">Сброс</button>
       </div>
+      <div class="instrument-controls"><label>Звук <select id="instrument" aria-label="Инструмент"><option value="bell">Колокольчик</option><option value="keys">Электропиано</option><option value="pluck">Щипковый</option><option value="pad">Синтезатор</option></select></label><span id="sync-status" role="status">Общий темп вкладок</span></div>
       <div class="light-grid" role="group" aria-label="Сетка нот: 16 шагов, 16 высот"></div>
       <p class="sequencer-hint">Нажми на огни → включи музыку<br>Выше — выше нота · слева направо — время</p>
     </main>`;
   const grid = document.querySelector(".light-grid");
   const play = document.getElementById("play");
   const tempo = document.getElementById("tempo");
+  const instrument = document.getElementById("instrument");
   const pattern = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
   const cells = [];
   const voices = new Set();
   const visuals = new Set();
-  let context, master, timer, running = false, starting = false, nextStep = 0, nextTime = 0, bpm = 110;
+  let context, master, timer, running = false, starting = false, cursor = 0;
+  let transport;
+  function resetSchedule() {
+    if (!running) return;
+    for (const visual of visuals) clearTimeout(visual);
+    visuals.clear();
+    for (const voice of voices) if (voice.time > context.currentTime) voice.oscillator.stop();
+    cursor = wallTime() + 35;
+  }
+  transport = createTransport(state => {
+    tempo.value = state.bpm;
+    resetSchedule();
+  }, available => {
+    document.getElementById("sync-status").textContent = available ? "● Общий темп вкладок" : "Локальный темп";
+  });
+  tempo.value = transport.state.bpm;
 
   function setCell(row, column, enabled) {
     pattern[row][column] = enabled;
@@ -68,21 +85,37 @@ if (typeof document !== "undefined") {
   function sound(row, time, level) {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
-    oscillator.type = "sine";
+    const presets = {
+      bell: { type: "sine", attack: 0.008, decay: 0.85, harmonics: [1, 0, 0.3, 0, 0.12] },
+      keys: { type: "triangle", attack: 0.012, decay: 0.65 },
+      pluck: { type: "sawtooth", attack: 0.004, decay: 0.25 },
+      pad: { type: "sine", attack: 0.09, decay: 1.2, harmonics: [1, 0.3, 0.14, 0.06] },
+    };
+    const preset = presets[instrument.value];
+    oscillator.type = preset.type;
+    if (preset.harmonics) oscillator.setPeriodicWave(context.createPeriodicWave(new Float32Array(preset.harmonics.length + 1), new Float32Array([0, ...preset.harmonics])));
     oscillator.frequency.value = 440 * 2 ** ((rowMidi(row) - 69) / 12);
     gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(level, time + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.85);
-    oscillator.connect(gain).connect(master);
+    gain.gain.exponentialRampToValueAtTime(level, time + preset.attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay);
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = instrument.value === "pluck" ? 1800 : 7000;
+    oscillator.connect(filter).connect(gain).connect(master);
     oscillator.start(time);
-    oscillator.stop(time + 0.9);
-    const voice = { oscillator, gain };
+    oscillator.stop(time + preset.decay + 0.05);
+    const voice = { oscillator, gain, time };
     voices.add(voice);
-    oscillator.onended = () => { voices.delete(voice); oscillator.disconnect(); gain.disconnect(); };
+    oscillator.onended = () => { voices.delete(voice); oscillator.disconnect(); filter.disconnect(); gain.disconnect(); };
   }
   function schedule() {
-    while (nextTime < context.currentTime + 0.1) {
-      const column = nextStep;
+    const now = wallTime();
+    cursor = Math.max(cursor, now + 10);
+    while (true) {
+      const boundary = boundaryAfter(transport.state, cursor);
+      if (boundary.time > now + 200) break;
+      const nextTime = context.currentTime + (boundary.time - now) / 1000;
+      const column = ((boundary.step % SIZE) + SIZE) % SIZE;
       const rows = pattern.flatMap((row, index) => row[column] ? [index] : []);
       for (const row of rows) sound(row, nextTime, 0.22 / Math.max(1, rows.length));
       const visual = setTimeout(() => {
@@ -90,8 +123,7 @@ if (typeof document !== "undefined") {
         for (const cell of cells) cell.classList.toggle("is-step", Number(cell.dataset.column) === column);
       }, Math.max(0, (nextTime - context.currentTime) * 1000));
       visuals.add(visual);
-      nextTime += stepDuration(bpm);
-      nextStep = (nextStep + 1) % SIZE;
+      cursor = boundary.time + 1;
     }
   }
   function stop() {
@@ -117,10 +149,9 @@ if (typeof document !== "undefined") {
       context ??= new (window.AudioContext || window.webkitAudioContext)();
       if (!master) { master = context.createGain(); master.gain.value = 0.65; master.connect(context.destination); }
       await context.resume();
-      if (document.hidden) return;
       running = true;
-      nextStep = 0;
-      nextTime = context.currentTime + 0.03;
+      transport.refresh();
+      cursor = wallTime() + 35;
       play.textContent = "■ Стоп";
       play.setAttribute("aria-pressed", "true");
       schedule();
@@ -130,8 +161,9 @@ if (typeof document !== "undefined") {
     } finally { starting = false; play.disabled = false; }
   });
   function updateTempo() {
-    bpm = Math.min(240, Math.max(40, Number(tempo.value) || 110));
+    const bpm = Math.min(240, Math.max(40, Number(tempo.value) || 110));
     tempo.value = bpm;
+    if (bpm !== transport.state.bpm) transport.setTempo(bpm);
   }
   tempo.addEventListener("change", updateTempo);
   tempo.addEventListener("blur", updateTempo);
@@ -139,11 +171,8 @@ if (typeof document !== "undefined") {
     stop();
     for (let row = 0; row < SIZE; row++) for (let column = 0; column < SIZE; column++) setCell(row, column, false);
   });
-  document.getElementById("example").addEventListener("click", () => {
-    for (let row = 0; row < SIZE; row++) for (let column = 0; column < SIZE; column++) setCell(row, column, false);
-    [10, 8, 6, 8, 9, 7, 5, 7, 10, 8, 4, 6, 9, 7, 5, 8].forEach((row, column) => setCell(row, column, true));
-    [0, 4, 8, 12].forEach(column => setCell(15, column, true));
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) { transport.refresh(); resetSchedule(); }
   });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
   window.addEventListener("pagehide", stop);
 }
