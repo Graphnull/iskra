@@ -12,15 +12,16 @@ if (typeof document !== "undefined") {
   document.body.classList.add("tenorion-mode");
   document.querySelector("main").outerHTML = `
     <main class="tenorion" aria-labelledby="title">
-      <header class="heading"><div><p class="eyebrow">СВЕТОВАЯ МУЗЫКА</p><h1 id="title">Tenori-on</h1></div><a class="mode-link" href="?">Пианино ↗</a></header>
+      <header class="heading"><div><p class="eyebrow">СВЕТОВАЯ МУЗЫКА</p><h1 id="title">Tenori-on</h1></div></header>
       <div class="sequencer-controls">
         <button type="button" id="play" aria-pressed="false">▶ Играть</button>
-        <label class="tempo">Темп <input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
+        <select id="instrument" aria-label="Инструмент"><option value="bell">Колокольчик</option><option value="keys">Электропиано</option><option value="pluck">Щипковый</option><option value="pad">Синтезатор</option></select>
+        <label class="tempo"> <input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
         <button type="button" id="clear" aria-label="Очистить сетку">Сброс</button>
       </div>
-      <div class="instrument-controls"><label>Звук <select id="instrument" aria-label="Инструмент"><option value="bell">Колокольчик</option><option value="keys">Электропиано</option><option value="pluck">Щипковый</option><option value="pad">Синтезатор</option></select></label></div>
+
       <div class="light-grid" role="group" aria-label="Сетка нот: 16 шагов, 16 высот"></div>
-      <p class="sequencer-hint">Нажми на огни → включи музыку<br>Выше — выше нота · слева направо — время</p>
+      <p class="sequencer-hint">Огни — ноты · слева направо — время</p>
     </main>`;
   const grid = document.querySelector(".light-grid");
   const play = document.getElementById("play");
@@ -52,12 +53,18 @@ if (typeof document !== "undefined") {
     cell.setAttribute("aria-pressed", String(enabled));
   }
   for (let row = 0; row < SIZE; row++) {
+    const noteName = `${["C", "D", "E", "G", "A"][(SIZE - 1 - row) % 5]}${Math.floor(rowMidi(row) / 12) - 1}`;
+    const label = document.createElement("span");
+    label.className = "row-note";
+    label.textContent = noteName;
+    label.setAttribute("aria-hidden", "true");
+    grid.append(label);
     for (let column = 0; column < SIZE; column++) {
       const cell = document.createElement("button");
       cell.type = "button";
       cell.className = "light-cell";
       cell.dataset.column = column;
-      cell.setAttribute("aria-label", `Шаг ${column + 1}, нота ${["C", "D", "E", "G", "A"][(SIZE - 1 - row) % 5]}${Math.floor(rowMidi(row) / 12) - 1}`);
+      cell.setAttribute("aria-label", `Шаг ${column + 1}, нота ${noteName}`);
       cell.setAttribute("aria-pressed", "false");
       cell.tabIndex = row === 0 && column === 0 ? 0 : -1;
       cell.addEventListener("click", () => {

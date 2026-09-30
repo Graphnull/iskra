@@ -96,7 +96,10 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 
 .tenorion-mode { display: grid; place-items: center; }
 .tenorion {
-  width: min(100%, 480px);
+  width: min(100%, 600px);
+  height: min(100dvh, 720px);
+  display: flex;
+  flex-direction: column;
   padding: 10px;
   border: 1px solid #414d5c;
   border-radius: 22px;
@@ -105,10 +108,8 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 }
 .tenorion h1 { font-size: 22px; }
 .tenorion .eyebrow { font-size: 8px; line-height: 10px; margin: 0; }
-.mode-link { color: #b5c4d4; font-size: 11px; text-decoration: none; }
-.mode-link:hover { color: white; }
-.sequencer-controls { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
-.sequencer-controls button, .tempo input {
+.sequencer-controls { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px; margin: 6px 0; flex-shrink: 0; }
+.sequencer-controls button, .tempo input, .sequencer-controls select {
   height: 28px; border: 1px solid #566476; border-radius: 7px;
   background: #222e3e; color: #eaf1f8; font: inherit; font-size: 11px;
 }
@@ -117,26 +118,31 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 .sequencer-controls #play[aria-pressed="true"] { background: #f1c786; border-color: #f1c786; }
 .tempo { display: flex; align-items: center; gap: 4px; margin-right: auto; color: #b5c4d4; font-size: 11px; }
 .tempo input { width: 48px; padding: 2px 4px; }
+.sequencer-controls select { width: 100%; min-width: 0; padding: 0 4px; }
 .light-grid {
-  width: min(100%, max(160px, calc(100dvh - 158px)), 420px);
-  aspect-ratio: 1; display: grid; grid-template-columns: repeat(16, 1fr);
+  width: 100%; flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 17px repeat(16, minmax(0, 1fr));
   grid-template-rows: repeat(16, 1fr); gap: 3px; margin: 0 auto;
   padding: 8px; border: 1px solid #526072; border-radius: 12px;
   background: #111b28; box-shadow: inset 0 2px 12px #0007;
 }
 .light-cell {
-  min-width: 0; min-height: 0; padding: 0; border: 1px solid #485566;
-  border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4c596a, #273346);
+  min-width: 0; min-height: 0; padding: 0; border: 0;
+  display: grid; place-items: center; background: transparent;
   cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
-.light-cell.is-step { border-color: #aac7da; background: #65859d; }
-.light-cell.is-on { background: #d5f7bc; border-color: #d5f7bc; box-shadow: 0 0 6px #b9ff9666; }
-.light-cell.is-on.is-step { background: #fffbe1; border-color: white; box-shadow: 0 0 10px #edffb7; }
-.light-cell:focus-visible, .sequencer-controls button:focus-visible, .tempo input:focus-visible, .mode-link:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
+.row-note { display: grid; align-items: center; color: #a8b4c5; font-size: 8px; line-height: 1; }
+.light-cell::before { content: ""; height: 100%; aspect-ratio: 1; max-width: 100%; border: 1px solid #485566; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4c596a, #273346); }
+.light-cell.is-step::before { border-color: #aac7da; background: #65859d; }
+.light-cell.is-on::before { background: #d5f7bc; border-color: #d5f7bc; box-shadow: 0 0 6px #b9ff9666; }
+.light-cell.is-on.is-step::before { background: #fffbe1; border-color: white; box-shadow: 0 0 10px #edffb7; }
+.light-cell:focus-visible, .sequencer-controls button:focus-visible, .tempo input:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
 .sequencer-hint { margin: 6px 0 0; color: #b5c4d4; font-size: 10px; line-height: 12px; text-align: center; }
-.instrument-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; font-size: 10px; color: #b5c4d4; }
-.instrument-controls select { height: 22px; max-width: 135px; background: #222e3e; color: #eaf1f8; border: 1px solid #566476; border-radius: 6px; font: inherit; }
-.instrument-controls select:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
+.sequencer-controls select:focus-visible { outline: 2px solid #9bd7ff; outline-offset: 2px; }
 @media (max-width: 400px), (max-height: 400px) {
   .tenorion { min-height: 100dvh; border-radius: 0; border-left: 0; border-right: 0; }
+  .tenorion h1 { font-size: 18px; }
+  .tenorion .eyebrow { display: none; }
+  .sequencer-controls #play { min-width: 64px; }
+  .tempo { font-size: 0; gap: 0; }
 }
