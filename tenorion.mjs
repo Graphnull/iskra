@@ -1,4 +1,4 @@
-import { createTransport, boundaryAfter, wallTime } from "./transport.mjs";
+import { createTransport, boundaryAfter, wallTime } from "./transport.mjs?v=2";
 export const SIZE = 16;
 const SCALE = [0, 2, 4, 7, 9];
 export function rowMidi(row) {
