@@ -1,3 +1,4 @@
+import { widgetStorageKey } from "./widget-storage.mjs?v=8";
 import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
 import { createTransport, boundaryAfter, wallTime } from "./transport.mjs?v=2";
 import { SCALES, pitchForRow, noteLabel } from "./scales.mjs?v=4";
@@ -34,7 +35,7 @@ if (typeof document !== "undefined") {
   const transposeControl = document.getElementById("transpose");
   const octaveControl = document.getElementById("octave");
   let harmony = { scale: "pentatonic", transpose: 0, octave: 0 };
-  const harmonyKey = "tenorion-harmony-v1";
+  const harmonyKey = widgetStorageKey("tenorion-harmony-v1");
   for (const storageName of ["sessionStorage", "localStorage"]) {
     try {
       const saved = JSON.parse(window[storageName].getItem(harmonyKey));
@@ -45,8 +46,19 @@ if (typeof document !== "undefined") {
   scaleControl.value = harmony.scale;
   transposeControl.value = harmony.transpose;
   octaveControl.value = harmony.octave;
+  const instrumentKey = widgetStorageKey("tenorion-instrument-v1");
+  for (const storageName of ["sessionStorage", "localStorage"]) {
+    try {
+      const saved = window[storageName].getItem(instrumentKey);
+      if (["bell", "keys", "pluck", "pad"].includes(saved)) { instrument.value = saved; break; }
+    } catch {}
+  }
+  instrument.addEventListener("change", () => {
+    try { sessionStorage.setItem(instrumentKey, instrument.value); } catch {}
+    try { localStorage.setItem(instrumentKey, instrument.value); } catch {}
+  });
   const pattern = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
-  const patternKey = "tenorion-pattern-v1";
+  const patternKey = widgetStorageKey("tenorion-pattern-v1");
   function savePattern() {
     const saved = JSON.stringify(pattern);
     // Each open tab keeps its own part; new tabs can restore the last saved part.

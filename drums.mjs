@@ -1,3 +1,4 @@
+import { widgetStorageKey } from "./widget-storage.mjs?v=8";
 import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
 import { drumForMidi, DRUM_BINDINGS } from "./drum-notes.mjs?v=6";
 import { createTransport, boundaryAfter, wallTime } from './transport.mjs?v=2';
@@ -22,7 +23,7 @@ const play = document.getElementById('play');
 const tempo = document.getElementById('tempo');
 const pattern = TRACKS.map(() => Array(STEPS).fill(false));
 const cells = [];
-const storageKey = 'drum-pattern-v1';
+const storageKey = widgetStorageKey('drum-pattern-v1');
 const voices = new Set();
 const visuals = new Set();
 let context, output, noiseBuffer, timer, cursor, running = false, starting = false;
