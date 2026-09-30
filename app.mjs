@@ -1,2 +1,3 @@
 const mode = new URLSearchParams(location.search).get("mode");
-await import(mode === "tenorion" ? "./tenorion.mjs?v=2" : "./piano.mjs");
+const modules = { tenorion: "./tenorion.mjs?v=2", drums: "./drums.mjs?v=3" };
+await import(Object.hasOwn(modules, mode) ? modules[mode] : "./piano.mjs");
