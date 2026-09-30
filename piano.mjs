@@ -33,7 +33,16 @@ if (typeof document !== "undefined") {
   const byCode = new Map(keys.map(key => [key.code, key]));
   const buttons = new Map();
   const voices = new Map();
+  const focusControl = document.getElementById("focus-control");
+  const focusLabel = document.getElementById("focus-label");
   let audioContext;
+
+  function syncFocusStatus() {
+    const focused = document.hasFocus() && !document.hidden;
+    focusControl.classList.toggle("is-focused", focused);
+    focusLabel.textContent = focused ? "Клавиатура активна" : "Нажми, чтобы включить клавиатуру";
+    focusControl.setAttribute("aria-label", focused ? "Клавиатура активна" : "Нажмите, чтобы активировать клавиатуру");
+  }
 
   function renderKeys() {
     for (const row of ROWS) {
@@ -100,6 +109,14 @@ if (typeof document !== "undefined") {
   }
 
   renderKeys();
+  syncFocusStatus();
+  focusControl.addEventListener("click", () => {
+    window.focus();
+    focusControl.focus();
+    syncFocusStatus();
+  });
+  document.addEventListener("focusin", syncFocusStatus);
+  window.addEventListener("focus", syncFocusStatus);
   document.addEventListener("keydown", event => {
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
     const key = byCode.get(event.code);
@@ -108,13 +125,16 @@ if (typeof document !== "undefined") {
     startVoice(key, `keyboard:${event.code}`);
   });
   document.addEventListener("keyup", event => stopVoice(`keyboard:${event.code}`));
-  window.addEventListener("blur", stopAll);
+  window.addEventListener("blur", () => { stopAll(); syncFocusStatus(); });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopAll();
+    syncFocusStatus();
   });
   for (const [code, button] of buttons) {
     button.addEventListener("pointerdown", event => {
       event.preventDefault();
+      window.focus();
+      syncFocusStatus();
       button.setPointerCapture(event.pointerId);
       startVoice(byCode.get(code), `pointer:${event.pointerId}`);
     });

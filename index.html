@@ -17,7 +17,10 @@
         </div>
         <span class="sound-mark" aria-label="Звук включён">♫</span>
       </header>
-      <p class="hint">Нажимай клавиши или касайся пианино</p>
+      <button class="focus-control" id="focus-control" type="button">
+        <span class="focus-dot" aria-hidden="true"></span>
+        <span id="focus-label" aria-live="polite">Нажми, чтобы включить клавиатуру</span>
+      </button>
       <section class="octave" aria-label="Верхний ряд: Q W E R T Y U I O P левая скобка правая скобка, чёрные 2 3 5 6 7 9 0 равно">
         <div class="octave-heading"><span>ВЫШЕ</span><span>Q → ]</span></div>
         <div class="keyboard" id="upper-keyboard"></div>
