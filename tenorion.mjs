@@ -28,6 +28,23 @@ if (typeof document !== "undefined") {
   const tempo = document.getElementById("tempo");
   const instrument = document.getElementById("instrument");
   const pattern = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+  const patternKey = "tenorion-pattern-v1";
+  function savePattern() {
+    const saved = JSON.stringify(pattern);
+    // Each open tab keeps its own part; new tabs can restore the last saved part.
+    try { sessionStorage.setItem(patternKey, saved); } catch {}
+    try { localStorage.setItem(patternKey, saved); } catch {}
+  }
+  function readPattern() {
+    for (const storageName of ["sessionStorage", "localStorage"]) {
+      try {
+        const saved = JSON.parse(window[storageName].getItem(patternKey));
+        if (Array.isArray(saved) && saved.length === SIZE && saved.every(row =>
+          Array.isArray(row) && row.length === SIZE && row.every(value => typeof value === "boolean"))) return saved;
+      } catch {}
+    }
+    return null;
+  }
   const cells = [];
   const voices = new Set();
   const visuals = new Set();
@@ -69,6 +86,7 @@ if (typeof document !== "undefined") {
       cell.tabIndex = row === 0 && column === 0 ? 0 : -1;
       cell.addEventListener("click", () => {
         setCell(row, column, !pattern[row][column]);
+        savePattern();
         for (const item of cells) item.tabIndex = -1;
         cell.tabIndex = 0;
       });
@@ -85,6 +103,12 @@ if (typeof document !== "undefined") {
       cells.push(cell);
       grid.append(cell);
     }
+  }
+
+  const savedPattern = readPattern();
+  if (savedPattern) {
+    for (let row = 0; row < SIZE; row++) for (let column = 0; column < SIZE; column++) setCell(row, column, savedPattern[row][column]);
+    savePattern();
   }
 
   function sound(row, time, level) {
@@ -175,6 +199,7 @@ if (typeof document !== "undefined") {
   document.getElementById("clear").addEventListener("click", () => {
     stop();
     for (let row = 0; row < SIZE; row++) for (let column = 0; column < SIZE; column++) setCell(row, column, false);
+    savePattern();
   });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) { transport.refresh(); resetSchedule(); }
