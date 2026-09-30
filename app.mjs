@@ -3,5 +3,5 @@ const theme = parameters.get("_theme") === "light" ? "light" : "dark";
 document.documentElement.dataset.theme = theme;
 document.querySelector('meta[name="theme-color"]').content = theme === "light" ? "#f3f2ef" : "#191918";
 const mode = parameters.get("mode");
-const modules = { tenorion: "./tenorion.mjs?v=8", drums: "./drums.mjs?v=8" };
+const modules = { tenorion: "./tenorion.mjs?v=10", drums: "./drums.mjs?v=10" };
 await import(Object.hasOwn(modules, mode) ? modules[mode] : "./piano.mjs?v=6");

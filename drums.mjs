@@ -1,4 +1,4 @@
-import { widgetStorageKey } from "./widget-storage.mjs?v=8";
+import { createSections, mountSections, sectionPosition } from "./sections.mjs?v=10";
 import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
 import { drumForMidi, DRUM_BINDINGS } from "./drum-notes.mjs?v=6";
 import { createTransport, boundaryAfter, wallTime } from './transport.mjs?v=2';
@@ -13,27 +13,22 @@ document.querySelector('main').outerHTML = `
     <div class="sequencer-controls drum-controls">
       <button type="button" id="play" aria-pressed="false">▶ Играть</button>
       <label class="tempo">Темп <input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
-      <button type="button" id="clear">Сброс</button>
+      <button type="button" id="clear" aria-label="Очистить текущую секцию" title="Очистить текущую секцию">Сброс</button>
     </div>
     <div class="drum-grid" role="group" aria-label="Восемь ударных, шестнадцать шагов"></div>
-    <p class="sequencer-hint">Включай шаги · каждый блок — одна доля</p>
+    <p class="sequencer-hint">4 секции × 16 шагов · красная точка — играет</p>
   </main>`;
 const grid = document.querySelector('.drum-grid');
 const play = document.getElementById('play');
 const tempo = document.getElementById('tempo');
-const pattern = TRACKS.map(() => Array(STEPS).fill(false));
+const sequence = createSections("drum", TRACKS.length);
 const cells = [];
-const storageKey = widgetStorageKey('drum-pattern-v1');
 const voices = new Set();
 const visuals = new Set();
 let context, output, noiseBuffer, timer, cursor, running = false, starting = false;
-function save() {
-  const saved = JSON.stringify(pattern);
-  try { sessionStorage.setItem(storageKey, saved); } catch {}
-  try { localStorage.setItem(storageKey, saved); } catch {}
-}
+function save() { sequence.save(); }
 function setCell(row, column, value) {
-  pattern[row][column] = value;
+  sequence.pattern[row][column] = value;
   const cell = cells[row * STEPS + column];
   cell.classList.toggle('is-on', value);
   cell.setAttribute('aria-pressed', String(value));
@@ -61,7 +56,7 @@ for (let row = 0; row < TRACKS.length; row++) {
     cell.setAttribute('aria-pressed', 'false');
     cell.tabIndex = row === 0 && column === 0 ? 0 : -1;
     cell.addEventListener('click', () => {
-      setCell(row, column, !pattern[row][column]);
+      setCell(row, column, !sequence.pattern[row][column]);
       save();
       for (const item of cells) item.tabIndex = -1;
       cell.tabIndex = 0;
@@ -79,15 +74,7 @@ for (let row = 0; row < TRACKS.length; row++) {
     grid.append(cell);
   }
 }
-for (const storageName of ['sessionStorage', 'localStorage']) {
-  try {
-    const saved = JSON.parse(window[storageName].getItem(storageKey));
-    if (!Array.isArray(saved) || saved.length !== TRACKS.length || !saved.every(row => Array.isArray(row) && row.length === STEPS && row.every(value => typeof value === 'boolean'))) continue;
-    saved.forEach((row, r) => row.forEach((value, c) => setCell(r, c, value)));
-    save();
-    break;
-  } catch {}
-}
+const sectionView = mountSections(sequence, grid, cells);
 function clearVisuals() {
   for (const timeout of visuals) clearTimeout(timeout);
   visuals.clear();
@@ -147,12 +134,13 @@ function schedule() {
   while (true) {
     const boundary = boundaryAfter(transport.state, cursor);
     if (boundary.time > now + 200) break;
-    const column = ((boundary.step % STEPS) + STEPS) % STEPS;
+    const position = sectionPosition(boundary.step);
+    const { section, column } = position;
     const time = context.currentTime + (boundary.time - now) / 1000;
-    for (let row = 0; row < TRACKS.length; row++) if (pattern[row][column]) hit(row, time);
+    for (let row = 0; row < TRACKS.length; row++) if (sequence.state.patterns[section][row][column]) hit(row, time);
     const timeout = setTimeout(() => {
       visuals.delete(timeout);
-      for (const cell of cells) cell.classList.toggle('is-step', Number(cell.dataset.column) === column);
+      sectionView.showStep(position);
     }, Math.max(0, boundary.time - now));
     visuals.add(timeout);
     cursor = boundary.time + 1;
@@ -163,7 +151,7 @@ function stop() {
   clearInterval(timer);
   clearVisuals();
   for (const voice of voices) voice.source.stop(context.currentTime + 0.01);
-  for (const cell of cells) cell.classList.remove('is-step');
+  sectionView.stop();
   play.textContent = '▶ Играть';
   play.setAttribute('aria-pressed', 'false');
 }
@@ -212,7 +200,7 @@ tempo.addEventListener('change', updateTempo);
 tempo.addEventListener('blur', updateTempo);
 document.getElementById('clear').addEventListener('click', () => {
   stop();
-  pattern.forEach((row, r) => row.forEach((_, c) => setCell(r, c, false)));
+  sequence.pattern.forEach((row, r) => row.forEach((_, c) => setCell(r, c, false)));
   save();
 });
 document.addEventListener('visibilitychange', () => {

@@ -1,3 +1,4 @@
+import { createSections, mountSections, sectionPosition } from "./sections.mjs?v=10";
 import { widgetStorageKey } from "./widget-storage.mjs?v=8";
 import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
 import { createTransport, boundaryAfter, wallTime } from "./transport.mjs?v=2";
@@ -16,7 +17,7 @@ if (typeof document !== "undefined") {
         <button type="button" id="play" aria-pressed="false">▶ Играть</button>
         <select id="instrument" aria-label="Инструмент"><option value="bell">Колокольчик</option><option value="keys">Электропиано</option><option value="pluck">Щипковый</option><option value="pad">Синтезатор</option></select>
         <label class="tempo"> <input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
-        <button type="button" id="clear" aria-label="Очистить сетку">Сброс</button>
+        <button type="button" id="clear" aria-label="Очистить текущую секцию" title="Очистить текущую секцию">Сброс</button>
       </div>
 
       <div class="harmony-controls">
@@ -25,7 +26,7 @@ if (typeof document !== "undefined") {
         <label>Октава <input id="octave" type="number" min="-2" max="2" value="0" aria-label="Сдвиг октавы"></label>
       </div>
       <div class="light-grid" role="group" aria-label="Сетка нот: 16 шагов, 16 высот"></div>
-      <p class="sequencer-hint">Огни — ноты · слева направо — время</p>
+      <p class="sequencer-hint">4 секции × 16 шагов · красная точка — играет</p>
     </main>`;
   const grid = document.querySelector(".light-grid");
   const play = document.getElementById("play");
@@ -57,24 +58,8 @@ if (typeof document !== "undefined") {
     try { sessionStorage.setItem(instrumentKey, instrument.value); } catch {}
     try { localStorage.setItem(instrumentKey, instrument.value); } catch {}
   });
-  const pattern = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
-  const patternKey = widgetStorageKey("tenorion-pattern-v1");
-  function savePattern() {
-    const saved = JSON.stringify(pattern);
-    // Each open tab keeps its own part; new tabs can restore the last saved part.
-    try { sessionStorage.setItem(patternKey, saved); } catch {}
-    try { localStorage.setItem(patternKey, saved); } catch {}
-  }
-  function readPattern() {
-    for (const storageName of ["sessionStorage", "localStorage"]) {
-      try {
-        const saved = JSON.parse(window[storageName].getItem(patternKey));
-        if (Array.isArray(saved) && saved.length === SIZE && saved.every(row =>
-          Array.isArray(row) && row.length === SIZE && row.every(value => typeof value === "boolean"))) return saved;
-      } catch {}
-    }
-    return null;
-  }
+  const sequence = createSections("tenorion", SIZE);
+  function savePattern() { sequence.save(); }
   const cells = [];
   const voices = new Set();
   const visuals = new Set();
@@ -94,7 +79,7 @@ if (typeof document !== "undefined") {
   tempo.value = transport.state.bpm;
 
   function setCell(row, column, enabled) {
-    pattern[row][column] = enabled;
+    sequence.pattern[row][column] = enabled;
     const cell = cells[row * SIZE + column];
     cell.classList.toggle("is-on", enabled);
     cell.setAttribute("aria-pressed", String(enabled));
@@ -115,7 +100,7 @@ if (typeof document !== "undefined") {
       cell.setAttribute("aria-pressed", "false");
       cell.tabIndex = row === 0 && column === 0 ? 0 : -1;
       cell.addEventListener("click", () => {
-        setCell(row, column, !pattern[row][column]);
+        setCell(row, column, !sequence.pattern[row][column]);
         savePattern();
         for (const item of cells) item.tabIndex = -1;
         cell.tabIndex = 0;
@@ -161,11 +146,7 @@ if (typeof document !== "undefined") {
     control.addEventListener("blur", updateHarmony);
   }
 
-  const savedPattern = readPattern();
-  if (savedPattern) {
-    for (let row = 0; row < SIZE; row++) for (let column = 0; column < SIZE; column++) setCell(row, column, savedPattern[row][column]);
-    savePattern();
-  }
+  const sectionView = mountSections(sequence, grid, cells);
 
   async function ensureAudio() {
     context ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -220,12 +201,13 @@ if (typeof document !== "undefined") {
       const boundary = boundaryAfter(transport.state, cursor);
       if (boundary.time > now + 200) break;
       const nextTime = context.currentTime + (boundary.time - now) / 1000;
-      const column = ((boundary.step % SIZE) + SIZE) % SIZE;
-      const rows = pattern.flatMap((row, index) => row[column] ? [index] : []);
+      const position = sectionPosition(boundary.step);
+      const { section, column } = position;
+      const rows = sequence.state.patterns[section].flatMap((row, index) => row[column] ? [index] : []);
       for (const row of rows) soundMidi(rowMidi(row, harmony), nextTime, 0.22 / Math.max(1, rows.length));
       const visual = setTimeout(() => {
         visuals.delete(visual);
-        for (const cell of cells) cell.classList.toggle("is-step", Number(cell.dataset.column) === column);
+        sectionView.showStep(position);
       }, Math.max(0, (nextTime - context.currentTime) * 1000));
       visuals.add(visual);
       cursor = boundary.time + 1;
@@ -242,7 +224,7 @@ if (typeof document !== "undefined") {
       voice.gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.015);
       voice.oscillator.stop(context.currentTime + 0.05);
     }
-    for (const cell of cells) cell.classList.remove("is-step");
+    sectionView.stop();
     play.textContent = "▶ Играть";
     play.setAttribute("aria-pressed", "false");
   }
