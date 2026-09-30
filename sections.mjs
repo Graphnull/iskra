@@ -10,17 +10,22 @@ function validPattern(pattern, rows) {
   return Array.isArray(pattern) && pattern.length === rows && pattern.every(row =>
     Array.isArray(row) && row.length === SECTION_STEPS && row.every(value => typeof value === 'boolean'));
 }
-export function restoreSections(saved, legacy, rows) {
-  if (saved?.version === 2 && Number.isInteger(saved.selected) && saved.selected >= 0 && saved.selected < SECTION_COUNT
+function validSavedSections(saved, rows, previousRows = []) {
+  const acceptedRows = [rows, ...previousRows.filter(count => count < rows)];
+  return saved?.version === 2 && Number.isInteger(saved.selected) && saved.selected >= 0 && saved.selected < SECTION_COUNT
     && Array.isArray(saved.patterns) && saved.patterns.length === SECTION_COUNT
-    && saved.patterns.every(pattern => validPattern(pattern, rows))) {
-    return { version: 2, selected: saved.selected, patterns: saved.patterns.map(pattern => pattern.map(row => [...row])) };
+    && acceptedRows.some(count => saved.patterns.every(pattern => validPattern(pattern, count)));
+}
+export function restoreSections(saved, legacy, rows, previousRows = []) {
+  const expand = pattern => Array.from({ length: rows }, (_, row) => [...(pattern[row] ?? Array(SECTION_STEPS).fill(false))]);
+  if (validSavedSections(saved, rows, previousRows)) {
+    return { version: 2, selected: saved.selected, patterns: saved.patterns.map(expand) };
   }
   // Repeat an old loop in every section so upgrading preserves its sound.
-  const pattern = validPattern(legacy, rows) ? legacy : Array.from({ length: rows }, () => Array(SECTION_STEPS).fill(false));
-  return { version: 2, selected: 0, patterns: Array.from({ length: SECTION_COUNT }, () => pattern.map(row => [...row])) };
+  const pattern = [rows, ...previousRows.filter(count => count < rows)].some(count => validPattern(legacy, count)) ? legacy : [];
+  return { version: 2, selected: 0, patterns: Array.from({ length: SECTION_COUNT }, () => expand(pattern)) };
 }
-export function createSections(name, rows) {
+export function createSections(name, rows, { previousRows = [] } = {}) {
   const key = widgetStorageKey(`${name}-sections-v2`);
   const legacyKey = widgetStorageKey(`${name}-pattern-v1`);
   let saved, legacy;
@@ -28,8 +33,7 @@ export function createSections(name, rows) {
   for (const storageName of ['sessionStorage', 'localStorage']) {
     try {
       const candidate = JSON.parse(window[storageName].getItem(key));
-      if (candidate?.version === 2 && Number.isInteger(candidate.selected) && candidate.selected >= 0 && candidate.selected < SECTION_COUNT
-        && Array.isArray(candidate.patterns) && candidate.patterns.length === SECTION_COUNT && candidate.patterns.every(pattern => validPattern(pattern, rows))) {
+      if (validSavedSections(candidate, rows, previousRows)) {
         saved = candidate; break;
       }
     } catch {}
@@ -37,10 +41,10 @@ export function createSections(name, rows) {
   for (const storageName of ['sessionStorage', 'localStorage']) {
     try {
       const candidate = JSON.parse(window[storageName].getItem(legacyKey));
-      if (validPattern(candidate, rows)) { legacy = candidate; break; }
+      if ([rows, ...previousRows.filter(count => count < rows)].some(count => validPattern(candidate, count))) { legacy = candidate; break; }
     } catch {}
   }
-  const state = restoreSections(saved, legacy, rows);
+  const state = restoreSections(saved, legacy, rows, previousRows);
   return {
     state,
     get pattern() { return state.patterns[state.selected]; },

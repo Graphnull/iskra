@@ -251,3 +251,20 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 [data-theme="light"] .synth-cell.is-on { background: #64b96c; border-color: #64b96c; }
 [data-theme="light"] .synth-cell.is-on.is-step { background: #fff0c5; border-color: #a85f57; }
 [data-theme="light"] .is-recording { background: #d4a29c; border-color: #a85f57; }
+
+.drum-machine .drum-grid { grid-template-columns: 76px repeat(16, minmax(0, 1fr)); grid-template-rows: 12px repeat(12, minmax(0, 1fr)); gap: 2px; }
+.sample-track > div { display: flex; align-items: center; gap: 3px; }
+.sample-track > small { display: none; }
+.sample-track button { height: 16px; padding: 0; border: 1px solid #60605a; border-radius: 4px; background: #2b2b29; color: #f2f1ea; font: inherit; font-size: 8px; cursor: pointer; }
+.sample-track .sample-preview { flex: 1; min-width: 0; }
+.sample-track .sample-record { width: 18px; flex-shrink: 0; color: #dc827a; }
+.sample-track .sample-record.is-recording { background: #89534f; color: #fff; border-color: #dc827a; }
+.sample-track .sample-preview.has-sample { border-color: #85bd96; color: #b4e5c1; }
+.sample-track button:disabled { opacity: .55; cursor: default; }
+.drum-machine :is(.sample-track button, .drum-record-window):focus-visible { outline: 2px solid #dc827a; outline-offset: 1px; }
+.drum-record-window { margin: 0 0 5px; padding: 4px; border: 1px solid #60605a; border-radius: 6px; background: #2b2b29; color: #f2f1ea; font: inherit; font-size: 10px; cursor: pointer; }
+#record-status { max-height: 24px; overflow: auto; }
+[data-theme="light"] :is(.sample-track button, .drum-record-window) { background: #fcfbf7; color: #39382f; border-color: #bdb9ad; }
+[data-theme="light"] .sample-track .sample-record { color: #a85f57; }
+[data-theme="light"] .sample-track .sample-record.is-recording { background: #a85f57; color: #fff; }
+[data-theme="light"] .sample-track .sample-preview.has-sample { border-color: #348b44; color: #285333; }
