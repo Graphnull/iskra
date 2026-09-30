@@ -18,7 +18,7 @@ if (typeof document !== "undefined") {
         <label class="tempo">Темп <input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
         <button type="button" id="clear" aria-label="Очистить сетку">Сброс</button>
       </div>
-      <div class="instrument-controls"><label>Звук <select id="instrument" aria-label="Инструмент"><option value="bell">Колокольчик</option><option value="keys">Электропиано</option><option value="pluck">Щипковый</option><option value="pad">Синтезатор</option></select></label><span id="sync-status" role="status">Общий темп вкладок</span></div>
+      <div class="instrument-controls"><label>Звук <select id="instrument" aria-label="Инструмент"><option value="bell">Колокольчик</option><option value="keys">Электропиано</option><option value="pluck">Щипковый</option><option value="pad">Синтезатор</option></select></label></div>
       <div class="light-grid" role="group" aria-label="Сетка нот: 16 шагов, 16 высот"></div>
       <p class="sequencer-hint">Нажми на огни → включи музыку<br>Выше — выше нота · слева направо — время</p>
     </main>`;
@@ -42,9 +42,7 @@ if (typeof document !== "undefined") {
   transport = createTransport(state => {
     tempo.value = state.bpm;
     resetSchedule();
-  }, available => {
-    document.getElementById("sync-status").textContent = available ? "● Общий темп вкладок" : "Локальный темп";
-  });
+  }, () => {});
   tempo.value = transport.state.bpm;
 
   function setCell(row, column, enabled) {
