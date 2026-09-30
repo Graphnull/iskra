@@ -1,27 +1,18 @@
-// A shared musical clock. Wall-clock timestamps align independent AudioContexts.
-export const DEFAULT_TRANSPORT = { bpm: 110, anchor: 0, beat: 0, effectiveAt: 0, revision: 0, sender: "" };
-export const wallTime = () => performance.timeOrigin + performance.now();
+// Every device derives musical phase from Unix time and the selected BPM.
+export const DEFAULT_TRANSPORT = { bpm: 110, revision: 0, sender: "" };
+export const wallTime = () => Date.now();
 export function beatAt(state, time) {
-  const segment = state.previous && time < state.effectiveAt ? state.previous : state;
-  return segment.beat + (time - segment.anchor) * segment.bpm / 15000;
+  return time * state.bpm / 15000;
 }
 export function boundaryAfter(state, time) {
-  const step = Math.ceil(beatAt(state, time) - 1e-7);
-  const segment = state.previous && step < state.beat ? state.previous : state;
-  return { step, time: segment.anchor + (step - segment.beat) * 15000 / segment.bpm };
+  const step = Math.ceil(beatAt(state, time));
+  return { step, time: step * 15000 / state.bpm };
 }
-export function changeTempo(state, bpm, time, sender) {
-  const effectiveAt = time + 300;
-  const active = state.previous && time < state.effectiveAt ? state.previous : state;
-  return { bpm, anchor: effectiveAt, beat: beatAt(active, effectiveAt), effectiveAt,
-    previous: { bpm: active.bpm, anchor: active.anchor, beat: active.beat },
-    revision: state.revision + 1, sender };
+export function changeTempo(state, bpm, sender) {
+  return { bpm, revision: state.revision + 1, sender };
 }
 const valid = state => state && Number.isFinite(state.bpm) && state.bpm >= 40 && state.bpm <= 240
-  && Number.isFinite(state.anchor) && Number.isFinite(state.beat) && Number.isFinite(state.effectiveAt)
-  && Number.isSafeInteger(state.revision) && state.revision >= 0 && typeof state.sender === "string"
-  && (!state.previous || (Number.isFinite(state.previous.bpm) && state.previous.bpm >= 40 && state.previous.bpm <= 240
-    && Number.isFinite(state.previous.anchor) && Number.isFinite(state.previous.beat)));
+  && Number.isSafeInteger(state.revision) && state.revision >= 0 && typeof state.sender === "string";
 export function createTransport(onChange, onAvailability) {
   const key = "piano-shared-transport-v1";
   const sender = crypto.randomUUID();
@@ -32,7 +23,7 @@ export function createTransport(onChange, onAvailability) {
   function accept(candidate) {
     if (!valid(candidate)) return;
     if (candidate.revision < state.revision || (candidate.revision === state.revision && candidate.sender <= state.sender)) return;
-    state = candidate;
+    state = { bpm: candidate.bpm, revision: candidate.revision, sender: candidate.sender };
     onChange(state);
   }
   accept(read());
@@ -52,7 +43,7 @@ export function createTransport(onChange, onAvailability) {
       const update = () => {
         accept(read());
         if (bpm === state.bpm) return;
-        const next = changeTempo(state, bpm, wallTime(), sender);
+        const next = changeTempo(state, bpm, sender);
         accept(next);
         try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* BroadcastChannel still works without persistence. */ }
         channel?.postMessage({ type: "state", state: next });
