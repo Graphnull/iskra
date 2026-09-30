@@ -4,30 +4,30 @@ import {synthPosition,restoreSynth,putNote,noteAt,activeSynthNotes} from './synt
 import {createMicrophone,sampleBounds} from './microphone.mjs';
 import {synthVoice,releaseVoice} from './synth-audio.mjs';
 
-test('256-step song boundaries, sustained join and section isolation',()=>{
-  assert.deepEqual(synthPosition(63),{section:0,column:63});
-  assert.deepEqual(synthPosition(64),{section:1,column:0});
-  assert.deepEqual(synthPosition(255),{section:3,column:63});
-  assert.deepEqual(synthPosition(256),{section:0,column:0});
-  const state=restoreSynth(null);state.sections[0]=putNote([],15,0,64);
-  assert.equal(activeSynthNotes(state,48)[0].remaining,16);
-  assert.equal(activeSynthNotes(state,64).length,0);
-  state.selected=2;state.page=3;state.length=64;state.cutoff=1000;
+test('64-step song boundaries, sustained join and section isolation',()=>{
+  assert.deepEqual(synthPosition(15),{section:0,column:15});
+  assert.deepEqual(synthPosition(16),{section:1,column:0});
+  assert.deepEqual(synthPosition(63),{section:3,column:15});
+  assert.deepEqual(synthPosition(64),{section:0,column:0});
+  const state=restoreSynth(null);state.sections[0]=putNote([],15,0,16);
+  assert.equal(activeSynthNotes(state,12)[0].remaining,4);
+  assert.equal(activeSynthNotes(state,16).length,0);
+  state.selected=2;state.length=16;state.cutoff=1000;
   assert.deepEqual(restoreSynth(JSON.parse(JSON.stringify(state))),state);
 });
-test('long notes cross pages; overlapping replacement and section end clipping',()=>{
-  let notes=putNote([],3,12,32);
-  assert.equal(noteAt(notes,3,32).length,32);
-  notes=putNote(notes,3,20,4);assert.equal(notes.length,1);
-  notes=putNote(notes,4,20,8);assert.equal(notes.length,2);
-  notes=putNote(notes,2,60,64);assert.equal(noteAt(notes,2,63).length,4);
-  const damaged=restoreSynth(null);damaged.sections[0]=[{row:0,start:63,length:2}];
+test('long notes hold through steps; overlapping replacement and section end clipping',()=>{
+  let notes=putNote([],3,0,12);
+  assert.equal(noteAt(notes,3,8).length,12);
+  notes=putNote(notes,3,4,4);assert.equal(notes.length,1);
+  notes=putNote(notes,4,4,8);assert.equal(notes.length,2);
+  notes=putNote(notes,2,12,16);assert.equal(noteAt(notes,2,15).length,4);
+  const damaged=restoreSynth(null);damaged.sections[0]=[{row:0,start:15,length:2}];
   assert.deepEqual(restoreSynth(damaged),restoreSynth(null));
 });
 function audioMock(){
   const nodes=[]; const parameter=()=>({value:0,calls:[],setValueAtTime(...a){this.calls.push(['set',...a]);},exponentialRampToValueAtTime(...a){this.calls.push(['ramp',...a]);},cancelScheduledValues(...a){this.calls.push(['cancel',...a]);},setTargetAtTime(...a){this.calls.push(['target',...a]);}});
-  const node=()=>{const n={connect(){return this;},disconnect(){},frequency:parameter(),playbackRate:parameter(),gain:parameter(),Q:parameter(),start(t){this.started=t;},stop(t){this.stopped=t;}};nodes.push(n);return n;};
-  return {currentTime:2,createBufferSource:node,createOscillator:node,createGain:node,createBiquadFilter:node,nodes};
+  const node=()=>{const n={connect(){return this;},disconnect(){},setPeriodicWave(wave){this.wave=wave;},frequency:parameter(),playbackRate:parameter(),gain:parameter(),Q:parameter(),start(t){this.started=t;},stop(t){this.stopped=t;}};nodes.push(n);return n;};
+  return {currentTime:2,createPeriodicWave:(real,imag)=>({real,imag}),createBufferSource:node,createOscillator:node,createGain:node,createBiquadFilter:node,nodes};
 }
 test('sample transposition, looping and long release use the same audio path as live keys',()=>{
   const context=audioMock(),buffer={duration:1};
@@ -65,4 +65,22 @@ test('denial, recorder failure and disposal during permission request do not lea
   await failed.start();assert.equal(stopped,1);
   const pending=createMicrophone({...base,mediaDevices:{getUserMedia(){return new Promise(r=>{resolveStream=r;});}},Recorder:class{constructor(){throw Error('must not record');}}});
   const request=pending.start();pending.dispose();resolveStream(stream);await request;assert.equal(stopped,2);
+});
+
+test('808 voice has a sine body, pitch drop and natural amplitude decay',()=>{
+  const ctx=audioMock();
+  const voice=synthVoice(ctx,{}, {sound:'bass',cutoff:4500},36,3,2);
+  assert.equal(voice.source.type,'sine');
+  assert.ok(voice.source.wave.imag[1] > voice.source.wave.imag[2]);
+  const ramps=voice.source.frequency.calls;
+  assert.ok(ramps[0][1] > ramps[1][1]);
+  assert.equal(ramps[1][2],3.045);
+  assert.ok(voice.gain.gain.calls.some(c=>c[0]==='ramp'&&c[1]===0.035));
+});
+test('previous four-page patterns retain all four sections when shortened',()=>{
+  const old={version:1,selected:2,page:3,length:64,sections:[[{row:0,start:48,length:16}],[],[{row:2,start:0,length:64}],[]]};
+  const state=restoreSynth(old);
+  assert.deepEqual(state.sections[0],[{row:0,start:12,length:4}]);
+  assert.deepEqual(state.sections[2],[{row:2,start:0,length:16}]);
+  assert.equal(state.selected,2);assert.equal(state.length,16);assert.equal(state.version,2);
 });
