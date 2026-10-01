@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from "react";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=44ddd5741a85";
-import { isRecord } from "../../core/guards.js?v=44ddd5741a85";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=0e29a9d12735";
+import { isRecord } from "../../core/guards.js?v=0e29a9d12735";
 export function Recorder() {
     const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState("Запись вернётся в инструмент.");
     const microphone = useRef(null);

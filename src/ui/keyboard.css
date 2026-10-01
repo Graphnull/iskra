@@ -1,0 +1,163 @@
+.octave-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.octave-heading {
+  color: #aaa9a3;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.octave + .octave {
+  margin-top: 12px;
+}
+
+.octave-heading {
+  margin-bottom: 6px;
+}
+
+.keyboard {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: clamp(96px, 28vw, 135px);
+  gap: 2px;
+  isolation: isolate;
+  touch-action: none;
+}
+
+.key {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  font: inherit;
+  transition:
+    transform 0.06s ease,
+    background-color 0.06s ease;
+}
+
+.key:focus-visible {
+  outline: 3px solid #dc827a;
+  outline-offset: -4px;
+}
+
+.key.white {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  align-items: center;
+  gap: 3px;
+  padding: 0 0 10px;
+  border-radius: 4px 4px 9px 9px;
+  background: linear-gradient(#fffefa, #dedfd9);
+  box-shadow:
+    inset 0 -4px #b9bab6,
+    0 3px 0 #171716;
+  color: #41413c;
+}
+
+.key.white .letter {
+  font-size: clamp(15px, 4vw, 19px);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.key.white .note {
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.key.black {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: calc(
+    var(--position) * 100% / var(--white-count) - 23.5% / var(--white-count)
+  );
+  width: calc(47% / var(--white-count));
+  height: 61%;
+  padding: 0 0 10px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  border: 1px solid #55554f;
+  border-radius: 2px 2px 6px 6px;
+  background: linear-gradient(90deg, #1c1c1b, #3b3b38 60%, #191918);
+  box-shadow:
+    inset 0 -5px #111110,
+    0 3px 3px #11111088;
+  color: #f3f5f4;
+  font-size: clamp(11px, 3vw, 14px);
+  font-weight: 800;
+}
+
+.key.white.is-active {
+  background: #c4edac;
+  transform: translateY(2px);
+}
+
+.key.black.is-active {
+  background: #638972;
+  transform: translateY(2px);
+}
+
+@media (max-width: 400px), (max-height: 400px) {
+  .octave + .octave {
+    margin-top: 9px;
+  }
+  .keyboard {
+    height: clamp(88px, 25.5vw, 96px);
+  }
+}
+
+.live-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.keyboard-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.live-keys .keyboard {
+  height: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.live-keys .key.black {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  gap: 3px;
+}
+
+.live-keys .key.black .note {
+  display: none;
+}
+
+.live-keys .key.white .note {
+  font-size: 8px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+[data-theme="light"] .octave-heading {
+  color: #646259;
+}

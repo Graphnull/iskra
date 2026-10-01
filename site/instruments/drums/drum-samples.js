@@ -1,5 +1,5 @@
-import { drumForMidi } from "./drum-notes.js?v=44ddd5741a85";
-import { sampleBounds } from "../../core/microphone.js?v=44ddd5741a85";
+import { drumForMidi } from "./drum-notes.js?v=0e29a9d12735";
+import { sampleBounds } from "../../core/microphone.js?v=0e29a9d12735";
 export const SAMPLE_BINDINGS = [
     { midi: 72, note: "C5", key: "Q" },
     { midi: 74, note: "D5", key: "W" },

@@ -1,12 +1,12 @@
-import { audioContext } from "../../core/dom.js?v=44ddd5741a85";
-import { at, isRecord } from "../../core/guards.js?v=44ddd5741a85";
-import { createObservable } from "../../core/observable.js?v=44ddd5741a85";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=44ddd5741a85";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=44ddd5741a85";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=44ddd5741a85";
-import { sampleStore } from "../../core/sample-store.js?v=44ddd5741a85";
-import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=44ddd5741a85";
-import { createSections, sectionPosition } from "../../core/sections.js?v=44ddd5741a85";
+import { audioContext } from "../../core/dom.js?v=0e29a9d12735";
+import { at, isRecord } from "../../core/guards.js?v=0e29a9d12735";
+import { createObservable } from "../../core/observable.js?v=0e29a9d12735";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=0e29a9d12735";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=0e29a9d12735";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=0e29a9d12735";
+import { sampleStore } from "../../core/sample-store.js?v=0e29a9d12735";
+import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=0e29a9d12735";
+import { createSections, sectionPosition } from "../../core/sections.js?v=0e29a9d12735";
 export const TRACKS = [
     "Бочка",
     "Снейр",

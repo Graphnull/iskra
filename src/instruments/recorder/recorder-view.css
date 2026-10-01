@@ -1,0 +1,38 @@
+.record-large:focus-visible {
+  outline: 2px solid #dc827a;
+  outline-offset: 1px;
+}
+
+.record-large.is-recording {
+  background: #89534f;
+  border-color: #dc827a;
+  color: #fff;
+}
+
+.recorder-panel p {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.record-large {
+  width: 100%;
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #dc827a;
+  border-radius: 12px;
+  background: #343432;
+  color: #f3f2ed;
+  font: inherit;
+  cursor: pointer;
+}
+
+[data-theme="light"] .record-large {
+  background: #fcfbf7;
+  border-color: #bdb9ad;
+  color: #39382f;
+}
+
+[data-theme="light"] .is-recording {
+  background: #d4a29c;
+  border-color: #a85f57;
+}
