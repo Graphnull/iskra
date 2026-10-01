@@ -41,5 +41,15 @@ test('microphone recording cancels a pending player, fills only its sample track
     model.record(2);await recorder.done;
     assert.equal(model.recordState,'idle');assert.equal(stopped,1);assert.ok(model.samples[2]);assert.equal(model.samples[0],null);assert.equal(model.samples[1],null);assert.equal(model.samples[3],null);
     assert.match(model.status,/Семпл 3 готов/);
+    assert.equal(model.editingSlot,2);
+    model.setSampleSettings(2,{gain:3,start:.05});
+    assert.deepEqual(model.sampleSettings[2],{gain:3,start:.05});
+    assert.deepEqual(createDrums().sampleSettings[2],{gain:3,start:.05});
+    assert.deepEqual(model.sampleSettings[0],{gain:1,start:0});
+    model.openSample(null);assert.equal(model.editingSlot,null);
+    model.openSample(0);assert.equal(model.editingSlot,null);
+    model.openSample(2);assert.equal(model.editingSlot,2);
+    model.record(2);await Promise.resolve();model.record(2);await recorder.done;
+    assert.deepEqual(model.sampleSettings[2],{gain:1,start:0});
   }finally{cleanup();delete window.AudioContext;globalThis.MediaRecorder=originalRecorder;delete navigator.mediaDevices;}
 });

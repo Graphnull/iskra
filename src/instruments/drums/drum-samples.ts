@@ -1,3 +1,5 @@
+import { restoreSampleSettings } from "../../core/sample-edit.js";
+import type { SampleSettings } from "../../core/sample-edit.js";
 import { drumForMidi } from "./drum-notes.js";
 import { sampleBounds } from "../../core/microphone.js";
 
@@ -40,19 +42,25 @@ export function drumSampleVoice(
   output: AudioNode,
   buffer: AudioBuffer | null | undefined,
   time: number,
+  settings?: SampleSettings,
 ) {
   if (!buffer) return null;
+  const { gain: level, start } = restoreSampleSettings(
+    settings,
+    buffer.duration,
+  );
+  const duration = buffer.duration - start;
   const source = context.createBufferSource(),
     gain = context.createGain();
   source.buffer = buffer;
   // Play once at its recorded pitch, with a short fade at either edge.
-  gain.gain.setValueAtTime(0.0001, time);
-  const fade = Math.min(0.005, buffer.duration / 4);
-  gain.gain.linearRampToValueAtTime(0.8, time + fade);
-  gain.gain.setValueAtTime(0.8, time + buffer.duration - fade);
-  gain.gain.linearRampToValueAtTime(0.0001, time + buffer.duration);
+  gain.gain.setValueAtTime(level ? 0.0001 : 0, time);
+  const fade = Math.min(0.005, duration / 4);
+  gain.gain.linearRampToValueAtTime(0.8 * level, time + fade);
+  gain.gain.setValueAtTime(0.8 * level, time + duration - fade);
+  gain.gain.linearRampToValueAtTime(level ? 0.0001 : 0, time + duration);
   source.connect(gain).connect(output);
-  source.start(time);
-  source.stop(time + buffer.duration + 0.02);
+  source.start(time, start);
+  source.stop(time + duration + 0.02);
   return { source, gain, time };
 }

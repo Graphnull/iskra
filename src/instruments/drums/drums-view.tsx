@@ -1,3 +1,4 @@
+import { SampleEditor } from "../../ui/sample-editor.js";
 import { useState } from "react";
 import { createDrums, TRACKS } from "./drums.js";
 import { DRUM_BINDINGS } from "./drum-notes.js";
@@ -15,7 +16,9 @@ export function Drums() {
   const model = useController(createDrums),
     keyboard = useKeyboard(model);
   const [keys, setKeys] = useState(false),
-    busy = model.recordState !== "idle";
+    busy = model.recordState !== "idle",
+    editingSlot = model.editingSlot,
+    editedSample = editingSlot === null ? null : model.samples[editingSlot];
   return (
     <main className="tenorion drum-machine" aria-labelledby="title">
       <Header
@@ -24,6 +27,7 @@ export function Drums() {
         view={keys ? "keys" : "grid"}
         onToggle={() => {
           keyboard.releaseAll();
+          model.openSample(null);
           setKeys(!keys);
         }}
       />
@@ -49,16 +53,27 @@ export function Drums() {
       <section
         className="live-keys"
         aria-label="Игра с клавиатуры, мышью или касанием"
-        hidden={!keys}
+        hidden={!keys || model.editingSlot !== null}
       >
         <Keyboard binding={keyboard} labelFor={model.labelFor} />
       </section>
+      {editingSlot !== null && editedSample && (
+        <SampleEditor
+          buffer={editedSample}
+          settings={at(model.sampleSettings, editingSlot)}
+          slot={editingSlot}
+          busy={busy}
+          onChange={(patch) => model.setSampleSettings(editingSlot, patch)}
+          onPreview={() => void model.preview(editingSlot)}
+          onClose={() => model.openSample(null)}
+        />
+      )}
       <NoteGrid
         kind="drum"
         labels={TRACKS}
         selected={model.sequence.state.selected}
         playing={model.playing}
-        hidden={keys}
+        hidden={keys || model.editingSlot !== null}
         onEdit={model.edit}
         note={(row, column) => ({
           enabled: !!at(model.sequence.pattern, row)[column],
@@ -99,6 +114,16 @@ export function Drums() {
                 </button>
                 <button
                   type="button"
+                  className="sample-edit"
+                  disabled={busy || !sample}
+                  aria-label={`Настроить семпл ${slot + 1}`}
+                  title="Громкость и начало"
+                  onClick={() => model.openSample(slot)}
+                >
+                  ⋯
+                </button>
+                <button
+                  type="button"
                   className={`sample-record${recording ? " is-recording" : ""}`}
                   disabled={busy && !recording}
                   aria-label={`${recording ? "Остановить запись" : "Записать"} семпл ${slot + 1}`}
@@ -121,7 +146,9 @@ export function Drums() {
         </p>
       )}
       <p className="sequencer-hint drum-hint" hidden={!!model.status}>
-        4 секции × 16 шагов · красная точка — играет
+        {editingSlot !== null
+          ? "Нажми на волну — сдвинь начало · Q/W/E/R — семплы"
+          : "4 секции × 16 шагов · красная точка — играет"}
       </p>
     </main>
   );

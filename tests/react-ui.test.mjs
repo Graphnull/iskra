@@ -98,3 +98,21 @@ test('ADSR dragging preserves handles and held notes, cancels gestures and isola
   assert.equal(document.querySelectorAll('.adsr-editor:not([hidden])').length,1);
   await act(async()=>root.unmount());
 });
+
+test('sample waveform editing updates its marker, clamps at edges and cancels pointer gestures',async()=>{
+  const {SampleEditor}=await import('../site/ui/sample-editor.js');
+  const root=createRoot(rootElement),settings={gain:1,start:0};let previews=0,closed=0;
+  const buffer={duration:2,numberOfChannels:1,getChannelData:()=>new Float32Array([0,.2,-.4,.1])};
+  const render=()=>root.render(createElement(SampleEditor,{buffer,settings,slot:1,busy:false,onChange:patch=>{Object.assign(settings,patch);render();},onPreview:()=>previews++,onClose:()=>closed++}));
+  await act(async()=>render());
+  const wave=document.querySelector('svg');wave.getBoundingClientRect=()=>({left:10,width:320});wave.setPointerCapture=()=>{};
+  const pointer=(type,x)=>wave.dispatchEvent(Object.assign(new Event(type,{bubbles:true,cancelable:true}),{pointerId:1,button:0,clientX:x}));
+  await act(async()=>pointer('pointerdown',170));assert.equal(settings.start,1);
+  assert.equal(document.querySelector('.sample-wave-start').getAttribute('d'),'M160 0V68');
+  await act(async()=>pointer('pointermove',900));assert.equal(settings.start,1.99);
+  await act(async()=>pointer('pointercancel',900));
+  await act(async()=>pointer('pointermove',10));assert.equal(settings.start,1.99);
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='▶ Прослушать').click());assert.equal(previews,1);
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Готово').click());assert.equal(closed,1);
+  await act(async()=>root.unmount());
+});

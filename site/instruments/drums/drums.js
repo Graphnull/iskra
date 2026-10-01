@@ -1,12 +1,14 @@
-import { audioContext } from "../../core/dom.js?v=0e29a9d12735";
-import { at, isRecord } from "../../core/guards.js?v=0e29a9d12735";
-import { createObservable } from "../../core/observable.js?v=0e29a9d12735";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=0e29a9d12735";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=0e29a9d12735";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=0e29a9d12735";
-import { sampleStore } from "../../core/sample-store.js?v=0e29a9d12735";
-import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=0e29a9d12735";
-import { createSections, sectionPosition } from "../../core/sections.js?v=0e29a9d12735";
+import { readStored, writeStored } from "../../core/storage.js?v=ee6d7c71cf26";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=ee6d7c71cf26";
+import { audioContext } from "../../core/dom.js?v=ee6d7c71cf26";
+import { at, isRecord } from "../../core/guards.js?v=ee6d7c71cf26";
+import { createObservable } from "../../core/observable.js?v=ee6d7c71cf26";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=ee6d7c71cf26";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=ee6d7c71cf26";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=ee6d7c71cf26";
+import { sampleStore } from "../../core/sample-store.js?v=ee6d7c71cf26";
+import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=ee6d7c71cf26";
+import { createSections, sectionPosition } from "../../core/sections.js?v=ee6d7c71cf26";
 export const TRACKS = [
     "Бочка",
     "Снейр",
@@ -25,6 +27,10 @@ export function createDrums() {
     const observable = createObservable(), sequence = createSections("drum", TRACKS.length, { previousRows: [8] });
     const samples = Array.from({ length: 4 }, () => null);
     const sampleKeys = Array.from({ length: 4 }, (_, slot) => widgetStorageKey(`drum-sample-${slot + 1}-v1`));
+    const settingsKey = widgetStorageKey("drum-sample-settings-v1");
+    const savedSettings = readStored(settingsKey, []);
+    const sampleSettings = Array.from({ length: 4 }, (_, slot) => restoreSampleSettings(Array.isArray(savedSettings) ? savedSettings[slot] : null));
+    let editingSlot = null;
     const voices = new Set();
     let context, output, noiseBuffer, playing = null;
     let requestedSlot = 0, status = "", recordState = "idle", recordWindow = false, disposed = false;
@@ -68,7 +74,7 @@ export function createDrums() {
     }
     function hit(row, time) {
         if (row >= 8) {
-            const voice = drumSampleVoice(context, output, samples[row - 8], time);
+            const voice = drumSampleVoice(context, output, samples[row - 8], time, sampleSettings[row - 8]);
             if (!voice)
                 return;
             voices.add(voice);
@@ -164,6 +170,11 @@ export function createDrums() {
         if (disposed || activeLifecycle !== lifecycle)
             return;
         samples[slot] = buffer;
+        sampleSettings[slot] = restoreSampleSettings(persist ? null : sampleSettings[slot], buffer.duration);
+        if (persist) {
+            editingSlot = slot;
+            writeStored(settingsKey, sampleSettings);
+        }
         observable.notify();
         if (!persist)
             return;
@@ -247,6 +258,24 @@ export function createDrums() {
         engine,
         sequence,
         samples,
+        sampleSettings,
+        get editingSlot() {
+            return editingSlot;
+        },
+        openSample(slot) {
+            if (slot !== null && !samples[slot])
+                return;
+            editingSlot = slot;
+            observable.notify();
+        },
+        setSampleSettings(slot, patch) {
+            const buffer = samples[slot];
+            if (!buffer)
+                return;
+            sampleSettings[slot] = restoreSampleSettings({ ...sampleSettings[slot], ...patch }, buffer.duration);
+            writeStored(settingsKey, sampleSettings);
+            observable.notify();
+        },
         get playing() {
             return playing;
         },

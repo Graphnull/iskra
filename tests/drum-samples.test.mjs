@@ -50,3 +50,15 @@ test('recorded sample is decoded and trims only silence, including stereo', asyn
   const buffer = await decodeDrumSample(context, new Blob(['audio']));
   assert.equal(buffer.length, 56); assert.equal(copied[0][1], 0.5); assert.ok(copied[1][51] > 0);
 });
+
+test('sample gain and offset use remaining duration and fade edges in the shared voice',()=>{
+  const calls=[],source={connect(){return this;},start(...a){calls.push(['start',...a]);},stop(...a){calls.push(['stop',...a]);}};
+  const gain={connect(){return this;},gain:{setValueAtTime(...a){calls.push(['set',...a]);},linearRampToValueAtTime(...a){calls.push(['ramp',...a]);}}};
+  const context={createBufferSource:()=>source,createGain:()=>gain};
+  drumSampleVoice(context,{}, {duration:2},3,{gain:2,start:.5});
+  assert.deepEqual(calls.at(-2),['start',3,.5]);assert.deepEqual(calls.at(-1),['stop',4.52]);
+  assert.ok(calls.some(c=>c[0]==='ramp'&&c[1]===1.6&&c[2]===3.005));
+  calls.length=0;drumSampleVoice(context,{}, {duration:.004},3,{gain:0,start:100});
+  assert.ok(calls.filter(c=>c[0]==='set'||c[0]==='ramp').every(c=>c[1]===0));
+  assert.deepEqual(calls.at(-2),['start',3,.002]);
+});

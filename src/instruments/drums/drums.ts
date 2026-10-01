@@ -1,3 +1,6 @@
+import { readStored, writeStored } from "../../core/storage.js";
+import { restoreSampleSettings } from "../../core/sample-edit.js";
+import type { SampleSettings } from "../../core/sample-edit.js";
 import { audioContext } from "../../core/dom.js";
 import { at, isRecord } from "../../core/guards.js";
 import { createObservable } from "../../core/observable.js";
@@ -35,6 +38,14 @@ export function createDrums() {
   const sampleKeys = Array.from({ length: 4 }, (_, slot) =>
     widgetStorageKey(`drum-sample-${slot + 1}-v1`),
   );
+  const settingsKey = widgetStorageKey("drum-sample-settings-v1");
+  const savedSettings = readStored(settingsKey, []);
+  const sampleSettings = Array.from({ length: 4 }, (_, slot) =>
+    restoreSampleSettings(
+      Array.isArray(savedSettings) ? savedSettings[slot] : null,
+    ),
+  );
+  let editingSlot: number | null = null;
   const voices = new Set<{
     source: OscillatorNode | AudioBufferSourceNode;
     time: number;
@@ -108,7 +119,13 @@ export function createDrums() {
   }
   function hit(row: number, time: number) {
     if (row >= 8) {
-      const voice = drumSampleVoice(context, output, samples[row - 8], time);
+      const voice = drumSampleVoice(
+        context,
+        output,
+        samples[row - 8],
+        time,
+        sampleSettings[row - 8],
+      );
       if (!voice) return;
       voices.add(voice);
       voice.source.onended = () => {
@@ -211,6 +228,14 @@ export function createDrums() {
     const buffer = await decodeDrumSample(prepareAudio(), blob);
     if (disposed || activeLifecycle !== lifecycle) return;
     samples[slot] = buffer;
+    sampleSettings[slot] = restoreSampleSettings(
+      persist ? null : sampleSettings[slot],
+      buffer.duration,
+    );
+    if (persist) {
+      editingSlot = slot;
+      writeStored(settingsKey, sampleSettings);
+    }
     observable.notify();
     if (!persist) return;
     recordWindow = false;
@@ -297,6 +322,25 @@ export function createDrums() {
     engine,
     sequence,
     samples,
+    sampleSettings,
+    get editingSlot() {
+      return editingSlot;
+    },
+    openSample(slot: number | null) {
+      if (slot !== null && !samples[slot]) return;
+      editingSlot = slot;
+      observable.notify();
+    },
+    setSampleSettings(slot: number, patch: Partial<SampleSettings>) {
+      const buffer = samples[slot];
+      if (!buffer) return;
+      sampleSettings[slot] = restoreSampleSettings(
+        { ...sampleSettings[slot], ...patch },
+        buffer.duration,
+      );
+      writeStored(settingsKey, sampleSettings);
+      observable.notify();
+    },
     get playing() {
       return playing;
     },

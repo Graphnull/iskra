@@ -1,12 +1,12 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
-import { createTenorion, rowMidi, SIZE } from "./tenorion.js?v=0e29a9d12735";
-import { SCALES, isScaleId, noteLabel } from "../../core/scales.js?v=0e29a9d12735";
-import { at } from "../../core/guards.js?v=0e29a9d12735";
-import { useController } from "../../ui/hooks.js?v=0e29a9d12735";
-import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=0e29a9d12735";
-import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=0e29a9d12735";
-import { NoteGrid } from "../../ui/grid.js?v=0e29a9d12735";
+import { createTenorion, rowMidi, SIZE } from "./tenorion.js?v=ee6d7c71cf26";
+import { SCALES, isScaleId, noteLabel } from "../../core/scales.js?v=ee6d7c71cf26";
+import { at } from "../../core/guards.js?v=ee6d7c71cf26";
+import { useController } from "../../ui/hooks.js?v=ee6d7c71cf26";
+import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=ee6d7c71cf26";
+import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=ee6d7c71cf26";
+import { NoteGrid } from "../../ui/grid.js?v=ee6d7c71cf26";
 export function Tenorion() {
     const model = useController(createTenorion), keyboard = useKeyboard(model);
     const [keys, setKeys] = useState(false);
