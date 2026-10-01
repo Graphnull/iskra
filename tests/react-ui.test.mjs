@@ -72,3 +72,29 @@ test('numeric controls accept zero and synchronize tempo from another widget',as
   await act(async()=>{input.focus();input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',code:'Enter',bubbles:true,cancelable:true}));});assert.deepEqual(changes,[0,2]);
   await act(async()=>root.unmount());
 });
+
+test('ADSR dragging preserves handles and held notes, cancels gestures and isolates filter changes',async()=>{
+  const root=createRoot(rootElement),state=restoreSynth(null),changes=[],released=[];
+  function View(){
+    const binding=useKeyboard({onNoteOn:()=>1,onNoteOff:v=>released.push(v)});
+    return createElement(SynthPanel,{state,held:[...binding.active],hidden:false,onChange(key,value){state[key]=value;changes.push(key);root.render(createElement(View));}});
+  }
+  await act(async()=>root.render(createElement(View)));
+  const editor=document.querySelector('.adsr-editor');editor.getBoundingClientRect=()=>({width:320,height:100});
+  const attack=editor.querySelector('[aria-label="Громкость: Атака"]');
+  const pointer=(type,props={})=>attack.dispatchEvent(Object.assign(new Event(type,{bubbles:true,cancelable:true}),{pointerId:2,button:0,clientX:0,clientY:0,...props}));
+  await act(async()=>key('keydown'));
+  await act(async()=>pointer('pointerdown'));
+  await act(async()=>pointer('pointermove',{clientX:32}));
+  assert.ok(state.attack>.015);assert.equal(editor.querySelector('.adsr-attack'),attack);assert.deepEqual(released,[]);
+  await act(async()=>pointer('pointercancel'));
+  const previous=state.attack;
+  await act(async()=>pointer('pointermove',{clientX:64}));assert.equal(state.attack,previous);
+  await act(async()=>key('keyup','KeyZ',attack));assert.deepEqual(released,[1]);
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Фильтр').click());
+  const filter=document.querySelector('[aria-label="Фильтр: Сустейн"]');
+  await act(async()=>filter.dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true,cancelable:true})));
+  assert.equal(state.filterSustain,1);assert.equal(state.sustain,.7);assert.equal(changes.at(-1),'filterSustain');
+  assert.equal(document.querySelectorAll('.adsr-editor:not([hidden])').length,1);
+  await act(async()=>root.unmount());
+});

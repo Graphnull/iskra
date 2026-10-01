@@ -1,5 +1,14 @@
+import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { SynthState, SynthParameters } from "./synth-sequence.js";
+import type { EnvelopeStage } from "../../core/envelope.js";
+import { ADSREditor } from "../../ui/adsr.js";
+const FILTER_KEYS: Record<EnvelopeStage, keyof SynthParameters> = {
+  attack: "filterAttack",
+  decay: "filterDecay",
+  sustain: "filterSustain",
+  release: "filterRelease",
+};
 const KNOBS: readonly (readonly [
   keyof SynthParameters,
   string,
@@ -7,58 +16,10 @@ const KNOBS: readonly (readonly [
   number,
   string,
 ])[] = [
-  ["cutoff", "Фильтр", 200, 10000, "Hz"],
+  ["cutoff", "Частота", 200, 10000, "Hz"],
   ["resonance", "Резонанс", 0, 12, "Q"],
-  ["attack", "Атака", 0.003, 2, "s"],
-  ["decay", "Затухание", 0.02, 8, "s"],
-  ["sustain", "Сустейн", 0, 1, "%"],
-  ["release", "Релиз", 0.05, 4, "s"],
+  ["filterAmount", "Глубина фильтра", 0, 1, "%"],
 ];
-
-function formatValue(value: number, unit: string): string {
-  if (unit === "s") return `${Math.round(value * 1000)} мс`;
-  if (unit === "%") return `${Math.round(value * 100)}%`;
-  if (unit === "Hz") return `${Math.round(value)} Гц`;
-  return value.toFixed(1);
-}
-
-export function envelopeShape(state: SynthState) {
-  const total = state.attack + state.decay + state.release + 1;
-  const attackEnd = 8 + (state.attack / total) * 304;
-  const decayEnd = attackEnd + (state.decay / total) * 304;
-  const sustainEnd = decayEnd + 304 / total;
-  const sustainY = 52 - state.sustain * 44;
-  const points: [number, number][] = [[8, 52]];
-  const floor = 0.0001 / (state.sound === "bass" ? 0.42 : 0.18);
-  function ramp(start: number, end: number, from: number, to: number): void {
-    for (let i = 1; i <= 24; i++) {
-      const t = i / 24;
-      points.push([
-        start + (end - start) * t,
-        52 - 44 * from * (to / from) ** t,
-      ]);
-    }
-  }
-  ramp(8, attackEnd, floor, 1);
-  ramp(attackEnd, decayEnd, 1, Math.max(floor, state.sustain));
-  points.push([sustainEnd, sustainY]);
-  for (let i = 1; i <= 24; i++) {
-    const t = i / 24;
-    points.push([
-      sustainEnd + (312 - sustainEnd) * t,
-      52 - 44 * state.sustain * Math.exp(-6.36 * t),
-    ]);
-  }
-  return {
-    path: points.map(([x, y], i) => `${i ? "L" : "M"}${x} ${y}`).join(" "),
-    labels: [
-      ["A", (8 + attackEnd) / 2],
-      ["D", (attackEnd + decayEnd) / 2],
-      ["S", (decayEnd + sustainEnd) / 2],
-      ["R", (sustainEnd + 312) / 2],
-    ] satisfies readonly (readonly [string, number])[],
-  };
-}
 export function SynthPanel({
   state,
   held,
@@ -70,43 +31,64 @@ export function SynthPanel({
   onChange(key: keyof SynthParameters, value: number): void;
   hidden: boolean;
 }) {
-  const envelope = envelopeShape(state);
+  const [filter, setFilter] = useState(false);
   return (
     <section
       className="synth-panel"
       aria-label="Пульт синтезатора"
       hidden={hidden}
     >
-      <div className="envelope-view">
-        <div className="envelope-title">
-          <span>Огибающая · ADSR</span>
-          <span>{held.length ? held.join(" · ") : "Играй Z–/ или Q–]"}</span>
+      <div className="envelope-tabs">
+        <div role="group" aria-label="Огибающая">
+          <button
+            type="button"
+            aria-pressed={!filter}
+            onClick={() => setFilter(false)}
+          >
+            Громкость
+          </button>
+          <button
+            type="button"
+            aria-pressed={filter}
+            onClick={() => setFilter(true)}
+          >
+            Фильтр
+          </button>
         </div>
-        <svg
-          id="envelope"
-          viewBox="0 0 320 64"
-          role="img"
-          aria-label={`Огибающая: атака ${formatValue(state.attack, "s")}, затухание ${formatValue(state.decay, "s")}, сустейн ${formatValue(state.sustain, "%")}, релиз ${formatValue(state.release, "s")}`}
-        >
-          <path className="envelope-axis" d="M8 5V52H312" />
-          <path id="envelope-path" d={envelope.path} />
-          <g>
-            {envelope.labels.map(([label, x]) => (
-              <text key={label} x={x} y="63" textAnchor="middle">
-                {label}
-              </text>
-            ))}
-          </g>
-        </svg>
+        <span className="held-notes">
+          {held.length ? held.join(" · ") : "Играй Z–/ или Q–]"}
+        </span>
       </div>
+      <ADSREditor
+        value={state}
+        title="Громкость"
+        hidden={filter}
+        onChange={onChange}
+      />
+      <ADSREditor
+        value={{
+          attack: state.filterAttack,
+          decay: state.filterDecay,
+          sustain: state.filterSustain,
+          release: state.filterRelease,
+        }}
+        title="Фильтр"
+        hidden={!filter}
+        onChange={(stage, value) => onChange(FILTER_KEYS[stage], value)}
+      />
       {KNOBS.map(([key, label, min, max, unit]) => {
-        const logarithmic = unit === "s" || key === "cutoff";
-        const encoded = Math.round(
-          logarithmic
-            ? (Math.log(state[key] / min) / Math.log(max / min)) * 1000
-            : ((state[key] - min) / (max - min)) * 1000,
-        );
-        const display = formatValue(state[key], unit);
+        const logarithmic = key === "cutoff",
+          encoded = Math.round(
+            logarithmic
+              ? (Math.log(state[key] / min) / Math.log(max / min)) * 1000
+              : ((state[key] - min) / (max - min)) * 1000,
+          );
+        const display =
+          unit === "Hz"
+            ? `${Math.round(state[key])} Гц`
+            : unit === "%"
+              ? `${Math.round(state[key] * 100)}%`
+              : state[key].toFixed(1);
         return (
           <label
             key={key}

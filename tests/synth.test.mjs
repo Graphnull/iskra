@@ -121,3 +121,29 @@ test('editing a held voice keeps its oscillator alive and the new release is use
   const count=voice.gain.gain.calls.length;updateSynthVoice(context,voice,'sustain',1);
   assert.equal(voice.gain.gain.calls.length,count);
 });
+
+test('filter ADSR schedules its own attack, sustain and release without stopping a held source',()=>{
+  const context=audioMock(),state={...restoreSynth(null),cutoff:400,filterAmount:1,filterAttack:.2,filterDecay:.3,filterSustain:.5,filterRelease:2};
+  const voice=synthVoice(context,{},state,60,2,null,true);
+  assert.deepEqual(voice.filter.frequency.calls.slice(0,3),[['set',400,2],['ramp',12800,2.2],['ramp',400*Math.sqrt(32),2.5]]);
+  context.currentTime=2.1;
+  updateSynthVoice(context,voice,'filterDecay',.6);
+  assert.equal(voice.source.stopped,undefined);
+  assert.ok(Math.abs(voice.filter.frequency.calls.at(-1)[2]-2.8)<1e-10);
+  releaseVoice(context,voice,2.15);
+  assert.equal(voice.source.stopped,4.15);
+  assert.deepEqual(voice.filter.frequency.calls.at(-1),['target',400,2.15,2/6.36]);
+  const count=voice.filter.frequency.calls.length;
+  updateSynthVoice(context,voice,'filterAmount',0);
+  assert.equal(voice.filter.frequency.calls.length,count);
+});
+test('filter settings restore independently, old saves keep their sound and frequency is bounded',()=>{
+  const state=restoreSynth(null),legacy={...state};
+  for(const key of ['filterAttack','filterDecay','filterSustain','filterRelease','filterAmount'])delete legacy[key];
+  assert.equal(restoreSynth(legacy).filterAmount,0);
+  assert.equal(restoreSynth({...state,filterSustain:-1,filterAmount:Infinity}).filterSustain,.7);
+  const saved={...state,filterAmount:.8,filterSustain:.3};assert.deepEqual(restoreSynth(saved),saved);
+  const context=audioMock();context.sampleRate=22050;
+  const voice=synthVoice(context,{}, {...state,cutoff:10000,filterAmount:1},60,2);
+  assert.ok(voice.filter.frequency.calls.every(c=>c[1]<=context.sampleRate*.475));
+});

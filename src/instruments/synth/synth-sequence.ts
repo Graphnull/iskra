@@ -1,3 +1,4 @@
+import type { ADSR } from "../../core/envelope.js";
 import { SECTION_STEPS, sectionPosition } from "../../core/sections.js";
 import { at, isRecord, isInteger, isNumber } from "../../core/guards.js";
 export const SYNTH_STEPS = SECTION_STEPS;
@@ -10,13 +11,14 @@ export interface SynthNote {
   start: number;
   length: number;
 }
-export interface SynthParameters {
+export interface SynthParameters extends ADSR {
   cutoff: number;
   resonance: number;
-  attack: number;
-  decay: number;
-  sustain: number;
-  release: number;
+  filterAttack: number;
+  filterDecay: number;
+  filterSustain: number;
+  filterRelease: number;
+  filterAmount: number;
 }
 export interface SynthState extends SynthParameters {
   version: 2;
@@ -82,6 +84,11 @@ const RANGES: readonly (readonly [keyof SynthParameters, number, number])[] = [
   ["decay", 0.02, 8],
   ["sustain", 0, 1],
   ["release", 0.05, 4],
+  ["filterAttack", 0.003, 2],
+  ["filterDecay", 0.02, 8],
+  ["filterSustain", 0, 1],
+  ["filterRelease", 0.05, 4],
+  ["filterAmount", 0, 1],
 ];
 export function restoreSynth(
   saved: unknown,
@@ -110,6 +117,11 @@ export function restoreSynth(
     decay: 0.4,
     sustain: 0.7,
     release: 0.35,
+    filterAttack: 0.015,
+    filterDecay: 0.4,
+    filterSustain: 0.7,
+    filterRelease: 0.35,
+    filterAmount: 0,
     sections: [[], [], [], []],
   });
   const fallback = () => (strict ? null : empty());

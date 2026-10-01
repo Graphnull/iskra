@@ -1,5 +1,5 @@
-import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=27da1cf7fbab";
-import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=27da1cf7fbab";
+import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=44ddd5741a85";
+import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=44ddd5741a85";
 export const SYNTH_STEPS = SECTION_STEPS;
 export const SYNTH_ROWS = 16;
 export const synthPosition = sectionPosition;
@@ -41,6 +41,11 @@ const RANGES = [
     ["decay", 0.02, 8],
     ["sustain", 0, 1],
     ["release", 0.05, 4],
+    ["filterAttack", 0.003, 2],
+    ["filterDecay", 0.02, 8],
+    ["filterSustain", 0, 1],
+    ["filterRelease", 0.05, 4],
+    ["filterAmount", 0, 1],
 ];
 export function restoreSynth(saved, { strict = false } = {}) {
     const empty = () => ({
@@ -58,6 +63,11 @@ export function restoreSynth(saved, { strict = false } = {}) {
         decay: 0.4,
         sustain: 0.7,
         release: 0.35,
+        filterAttack: 0.015,
+        filterDecay: 0.4,
+        filterSustain: 0.7,
+        filterRelease: 0.35,
+        filterAmount: 0,
         sections: [[], [], [], []],
     });
     const fallback = () => (strict ? null : empty());

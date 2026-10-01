@@ -1,4 +1,40 @@
-import { DEFAULT_WAVE } from "./synth-sequence.js?v=27da1cf7fbab";
+import { DEFAULT_WAVE } from "./synth-sequence.js?v=44ddd5741a85";
+function filterLevels(voice) {
+    const base = Math.max(20, Math.min(voice.filterMax, voice.cutoff));
+    const peak = Math.min(voice.filterMax, base * 2 ** (voice.filterAmount * 5));
+    return {
+        base,
+        peak,
+        sustain: base * (peak / base) ** voice.filterEnvelope.sustain,
+    };
+}
+function filterValue(voice, at) {
+    const { base, peak, sustain } = filterLevels(voice);
+    const age = Math.max(0, at - voice.time), { attack, decay } = voice.filterEnvelope;
+    if (age < attack)
+        return base * (peak / base) ** (age / attack);
+    if (age < attack + decay)
+        return peak * (sustain / peak) ** ((age - attack) / decay);
+    return sustain;
+}
+function scheduleFilter(voice, at, initial = false) {
+    const param = voice.filter.frequency;
+    const { base, peak, sustain } = filterLevels(voice);
+    const { attack, decay } = voice.filterEnvelope;
+    if (initial)
+        param.setValueAtTime(base, at);
+    if (!voice.filterAmount) {
+        if (!initial)
+            param.setTargetAtTime(base, at, 0.02);
+        return;
+    }
+    if (voice.time + attack > at)
+        param.exponentialRampToValueAtTime(peak, voice.time + attack);
+    if (voice.time + attack + decay > at)
+        param.exponentialRampToValueAtTime(sustain, voice.time + attack + decay);
+    else
+        param.setTargetAtTime(sustain, at, 0.02);
+}
 export function releaseVoice(context, voice, at = context.currentTime) {
     if (!voice || voice.released)
         return;
@@ -8,7 +44,18 @@ export function releaseVoice(context, voice, at = context.currentTime) {
     else
         voice.gain.gain.cancelScheduledValues(at);
     voice.gain.gain.setTargetAtTime(0.0001, at, voice.release === undefined ? 0.055 : voice.release / 6.36);
-    voice.source.stop(at + (voice.release ?? 0.35));
+    if (voice.filterAmount) {
+        const frequency = voice.filter.frequency;
+        if (frequency.cancelAndHoldAtTime)
+            frequency.cancelAndHoldAtTime(at);
+        else {
+            frequency.cancelScheduledValues(at);
+            frequency.setValueAtTime(filterValue(voice, at), at);
+        }
+        frequency.setTargetAtTime(filterLevels(voice).base, at, voice.filterEnvelope.release / 6.36);
+    }
+    voice.source.stop(at +
+        Math.max(voice.release ?? 0.35, voice.filterAmount ? voice.filterEnvelope.release : 0));
 }
 export function synthVoice(context, master, settings, midi, time, duration = null, live = false) {
     let source;
@@ -70,7 +117,17 @@ export function synthVoice(context, master, settings, midi, time, duration = nul
         peak,
         release: settings.release,
         released: false,
+        cutoff: settings.cutoff,
+        filterAmount: settings.filterAmount ?? 0,
+        filterEnvelope: {
+            attack: settings.filterAttack ?? 0.015,
+            decay: settings.filterDecay ?? 0.4,
+            sustain: settings.filterSustain ?? 0.7,
+            release: settings.filterRelease ?? 0.35,
+        },
+        filterMax: Math.min(20000, (context.sampleRate || 44100) * 0.475),
     };
+    scheduleFilter(voice, time, true);
     if (duration !== null)
         releaseVoice(context, voice, time + Math.max(0.025, duration));
     return voice;
@@ -84,8 +141,30 @@ export function updateSynthVoice(context, voice, key, value) {
     }
     if (typeof value !== "number")
         return;
-    if (key === "cutoff")
-        voice.filter.frequency.setTargetAtTime(value, at, 0.02);
+    const filterKeys = {
+        filterAttack: "attack",
+        filterDecay: "decay",
+        filterSustain: "sustain",
+        filterRelease: "release",
+    };
+    if (key === "cutoff" || key === "filterAmount" || key in filterKeys) {
+        if (voice.released)
+            return;
+        const frequency = voice.filter.frequency;
+        if (frequency.cancelAndHoldAtTime)
+            frequency.cancelAndHoldAtTime(at);
+        else {
+            frequency.cancelScheduledValues(at);
+            frequency.setValueAtTime(filterValue(voice, at), at);
+        }
+        if (key === "cutoff")
+            voice.cutoff = value;
+        else if (key === "filterAmount")
+            voice.filterAmount = value;
+        else if (key in filterKeys)
+            voice.filterEnvelope[filterKeys[key]] = value;
+        scheduleFilter(voice, at);
+    }
     if (key === "resonance")
         voice.filter.Q.setTargetAtTime(value, at, 0.02);
     if (key === "release" && !voice.released)
