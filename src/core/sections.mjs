@@ -1,4 +1,5 @@
-import { widgetStorageKey } from './widget-storage.mjs?v=8';
+import { readStored, writeStored } from './storage.mjs?v=274f22366041';
+import { widgetStorageKey } from './widget-storage.mjs?v=274f22366041';
 
 export const SECTION_COUNT = 4;
 export const SECTION_STEPS = 16;
@@ -28,32 +29,15 @@ export function restoreSections(saved, legacy, rows, previousRows = []) {
 export function createSections(name, rows, { previousRows = [] } = {}) {
   const key = widgetStorageKey(`${name}-sections-v2`);
   const legacyKey = widgetStorageKey(`${name}-pattern-v1`);
-  let saved, legacy;
-  // Validate each candidate before accepting it; blocked storage is optional.
-  for (const storageName of ['sessionStorage', 'localStorage']) {
-    try {
-      const candidate = JSON.parse(window[storageName].getItem(key));
-      if (validSavedSections(candidate, rows, previousRows)) {
-        saved = candidate; break;
-      }
-    } catch {}
-  }
-  for (const storageName of ['sessionStorage', 'localStorage']) {
-    try {
-      const candidate = JSON.parse(window[storageName].getItem(legacyKey));
-      if ([rows, ...previousRows.filter(count => count < rows)].some(count => validPattern(candidate, count))) { legacy = candidate; break; }
-    } catch {}
-  }
+  const saved = readStored(key, null, { validate: value => validSavedSections(value, rows, previousRows) });
+  const legacy = readStored(legacyKey, null, {
+    validate: value => [rows, ...previousRows.filter(count => count < rows)].some(count => validPattern(value, count)),
+  });
   const state = restoreSections(saved, legacy, rows, previousRows);
   return {
     state,
     get pattern() { return state.patterns[state.selected]; },
-    save() {
-      const value = JSON.stringify(state);
-      for (const storageName of ['sessionStorage', 'localStorage']) {
-        try { window[storageName].setItem(key, value); } catch {}
-      }
-    },
+    save() { writeStored(key, state); },
   };
 }
 export function mountSections(sequence, grid, cells) {

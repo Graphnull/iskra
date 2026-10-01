@@ -1,4 +1,4 @@
-import { buildKeyMap } from './keyboard-map.mjs?v=6';
+import { buildKeyMap } from './keyboard-map.mjs?v=274f22366041';
 
 export function bindKeyInput({ onNoteOn, onNoteOff = () => {}, onHighlight = () => {} }) {
   const keys = new Map(buildKeyMap().map(key => [key.code, key]));
@@ -34,6 +34,7 @@ export function bindKeyInput({ onNoteOn, onNoteOff = () => {}, onHighlight = () 
   });
   document.addEventListener('keyup', event => end(`keyboard:${event.code}`));
   window.addEventListener('blur', releaseAll);
+  window.addEventListener('pagehide', releaseAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   return { start, end, releaseAll };
 }

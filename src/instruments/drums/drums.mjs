@@ -1,11 +1,13 @@
-import { widgetStorageKey } from './widget-storage.mjs?v=8';
-import { createMicrophone, microphoneError } from './microphone.mjs?v=11';
-import { sampleStore } from './sample-store.mjs?v=11';
-import { SAMPLE_BINDINGS, drumTrackForMidi, decodeDrumSample, drumSampleVoice } from './drum-samples.mjs?v=12';
-import { createSections, mountSections, sectionPosition } from "./sections.mjs?v=12";
-import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
-import { DRUM_BINDINGS } from "./drum-notes.mjs?v=6";
-import { createTransport, boundaryAfter, wallTime } from './transport.mjs?v=2';
+import { bindPlayback } from '../../core/playback-control.mjs?v=274f22366041';
+import { createScheduler } from '../../core/scheduler.mjs?v=274f22366041';
+import { widgetStorageKey } from '../../core/widget-storage.mjs?v=274f22366041';
+import { createMicrophone, microphoneError } from '../../core/microphone.mjs?v=274f22366041';
+import { sampleStore } from '../../core/sample-store.mjs?v=274f22366041';
+import { SAMPLE_BINDINGS, drumTrackForMidi, decodeDrumSample, drumSampleVoice } from './drum-samples.mjs?v=274f22366041';
+import { createSections, mountSections, sectionPosition } from "../../core/sections.mjs?v=274f22366041";
+import { mountLiveKeyboard } from "../../core/live-keyboard.mjs?v=274f22366041";
+import { DRUM_BINDINGS } from "./drum-notes.mjs?v=274f22366041";
+import { createTransport } from '../../core/transport.mjs?v=274f22366041';
 
 const TRACKS = ['Бочка', 'Снейр', 'Хлопок', 'Хэт', 'Откр. хэт', 'Том', 'Крэш', 'Рим', 'Семпл 1', 'Семпл 2', 'Семпл 3', 'Семпл 4'];
 const STEPS = 16;
@@ -33,8 +35,8 @@ const samples = Array(4).fill(null);
 const sampleLabels = [], recordButtons = [], previewButtons = [];
 const sampleKeys = Array.from({ length: 4 }, (_, slot) => widgetStorageKey(`drum-sample-${slot + 1}-v1`));
 const voices = new Set();
-const visuals = new Set();
-let context, output, noiseBuffer, timer, cursor, running = false, starting = false;
+let scheduler;
+let context, output, noiseBuffer, running = false;
 function save() { sequence.save(); }
 function setCell(row, column, value) {
   sequence.pattern[row][column] = value;
@@ -99,16 +101,11 @@ for (let row = 0; row < TRACKS.length; row++) {
   }
 }
 const sectionView = mountSections(sequence, grid, cells);
-function clearVisuals() {
-  for (const timeout of visuals) clearTimeout(timeout);
-  visuals.clear();
-}
 const transport = createTransport(state => {
   tempo.value = state.bpm;
   if (!running) return;
-  clearVisuals();
+  scheduler?.reset();
   for (const voice of voices) if (voice.time > context.currentTime) voice.source.stop();
-  cursor = wallTime() + 35;
 }, () => {});
 tempo.value = transport.state.bpm;
 function attach(source, time, duration, level, filter) {
@@ -159,28 +156,19 @@ function hit(row, time) {
     case 7: tone(time, 1200, 900, 0.035, 0.15, 'square'); break;
   }
 }
-function schedule() {
-  const now = wallTime();
-  cursor = Math.max(cursor, now + 10);
-  while (true) {
-    const boundary = boundaryAfter(transport.state, cursor);
-    if (boundary.time > now + 200) break;
-    const position = sectionPosition(boundary.step);
-    const { section, column } = position;
-    const time = context.currentTime + (boundary.time - now) / 1000;
+scheduler = createScheduler({
+    onError() { stop(); play.textContent = 'Повторить'; },
+  context: () => context, transport: () => transport.state,
+  onStep({ step, time }) {
+    const { section, column } = sectionPosition(step);
     for (let row = 0; row < TRACKS.length; row++) if (sequence.state.patterns[section][row][column]) hit(row, time);
-    const timeout = setTimeout(() => {
-      visuals.delete(timeout);
-      sectionView.showStep(position);
-    }, Math.max(0, boundary.time - now));
-    visuals.add(timeout);
-    cursor = boundary.time + 1;
-  }
-}
+  },
+  onVisual: step => sectionView.showStep(sectionPosition(step)),
+});
 function stop() {
+  playback.cancelStart();
   running = false;
-  clearInterval(timer);
-  clearVisuals();
+  scheduler.stop();
   for (const voice of voices) voice.source.stop(context.currentTime + 0.01);
   sectionView.stop();
   play.textContent = '▶ Играть';
@@ -206,22 +194,9 @@ mountLiveKeyboard({
   async onNoteOn(key) { await ensureAudio(); hit(drumTrackForMidi(key.midi), context.currentTime); },
   labelFor: key => `${key.note}${key.octave} · ${TRACKS[drumTrackForMidi(key.midi)]}`,
 });
-play.addEventListener('click', async () => {
-  if (starting) return;
-  if (running) return stop();
-  starting = true;
-  play.disabled = true;
-  try {
-    await ensureAudio();
-    running = true;
-    transport.refresh();
-    cursor = wallTime() + 35;
-    play.textContent = '■ Стоп';
-    play.setAttribute('aria-pressed', 'true');
-    schedule();
-    timer = setInterval(schedule, 25);
-  } catch { stop(); play.textContent = 'Повторить'; }
-  finally { starting = false; play.disabled = false; }
+const playback = bindPlayback(play, {
+  prepare: ensureAudio, isRunning: () => running, stop,
+  start() { running = true; transport.refresh(); scheduler.start(); },
 });
 function updateTempo() {
   const bpm = Math.min(240, Math.max(40, Number(tempo.value) || 110));
@@ -236,9 +211,9 @@ document.getElementById('clear').addEventListener('click', () => {
   save();
 });
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { transport.refresh(); if (running) { clearVisuals(); cursor = wallTime() + 35; } }
+  if (!document.hidden) { transport.refresh(); if (running) scheduler.reset(); }
 });
-window.addEventListener('pagehide', () => { stop(); mic.dispose(); });
+window.addEventListener('pagehide', event => { stop(); mic.dispose(); if (!event.persisted) transport.close(); });
 
 const recordStatus = document.getElementById('record-status');
 const recordWindow = document.getElementById('record-window');

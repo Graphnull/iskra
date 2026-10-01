@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildKeyMap, releaseVoice } from "./piano.mjs";
+import { buildKeyMap, releaseVoice } from "../src/instruments/piano/piano.mjs";
 
 test("оба ряда покрывают нужные физические клавиши без повторов", () => {
   const keys = buildKeyMap();

@@ -1,4 +1,4 @@
-import { createMicrophone, microphoneError } from './microphone.mjs?v=11';
+import { createMicrophone, microphoneError } from '../../core/microphone.mjs?v=274f22366041';
 document.title='Запись семпла';
 document.querySelector('main').outerHTML='<main class="piano recorder-panel"><p class="eyebrow">СВОЙ ЗВУК</p><h1>Записать семпл</h1><p>Запиши голос или любой звук — до 10 секунд.</p><button id="record" class="record-large" type="button">● Начать запись</button><p id="status" role="status">Запись вернётся в инструмент.</p></main>';
 const parameters=new URLSearchParams(location.search);

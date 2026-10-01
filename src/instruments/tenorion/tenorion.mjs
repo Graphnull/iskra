@@ -1,8 +1,11 @@
-import { createSections, mountSections, sectionPosition } from "./sections.mjs?v=10";
-import { widgetStorageKey } from "./widget-storage.mjs?v=8";
-import { mountLiveKeyboard } from "./live-keyboard.mjs?v=6";
-import { createTransport, boundaryAfter, wallTime } from "./transport.mjs?v=2";
-import { SCALES, pitchForRow, noteLabel } from "./scales.mjs?v=4";
+import { bindPlayback } from '../../core/playback-control.mjs?v=274f22366041';
+import { readStored, writeStored } from '../../core/storage.mjs?v=274f22366041';
+import { createScheduler } from '../../core/scheduler.mjs?v=274f22366041';
+import { createSections, mountSections, sectionPosition } from "../../core/sections.mjs?v=274f22366041";
+import { widgetStorageKey } from "../../core/widget-storage.mjs?v=274f22366041";
+import { mountLiveKeyboard } from "../../core/live-keyboard.mjs?v=274f22366041";
+import { createTransport } from "../../core/transport.mjs?v=274f22366041";
+import { SCALES, pitchForRow, noteLabel } from "../../core/scales.mjs?v=274f22366041";
 export const SIZE = 16;
 export function rowMidi(row, settings) { return pitchForRow(row, settings); }
 export function stepDuration(bpm) { return 60 / bpm / 4; }
@@ -35,42 +38,28 @@ if (typeof document !== "undefined") {
   const scaleControl = document.getElementById("scale");
   const transposeControl = document.getElementById("transpose");
   const octaveControl = document.getElementById("octave");
-  let harmony = { scale: "pentatonic", transpose: 0, octave: 0 };
   const harmonyKey = widgetStorageKey("tenorion-harmony-v1");
-  for (const storageName of ["sessionStorage", "localStorage"]) {
-    try {
-      const saved = JSON.parse(window[storageName].getItem(harmonyKey));
-      if (saved && Object.hasOwn(SCALES, saved.scale) && Number.isInteger(saved.transpose) && Math.abs(saved.transpose) <= 12
-        && Number.isInteger(saved.octave) && Math.abs(saved.octave) <= 2) { harmony = saved; break; }
-    } catch {}
-  }
+  let harmony = readStored(harmonyKey, { scale: "pentatonic", transpose: 0, octave: 0 }, {
+    validate: saved => saved && Object.hasOwn(SCALES, saved.scale)
+      && Number.isInteger(saved.transpose) && Math.abs(saved.transpose) <= 12
+      && Number.isInteger(saved.octave) && Math.abs(saved.octave) <= 2,
+  });
   scaleControl.value = harmony.scale;
   transposeControl.value = harmony.transpose;
   octaveControl.value = harmony.octave;
   const instrumentKey = widgetStorageKey("tenorion-instrument-v1");
-  for (const storageName of ["sessionStorage", "localStorage"]) {
-    try {
-      const saved = window[storageName].getItem(instrumentKey);
-      if (["bell", "keys", "pluck", "pad"].includes(saved)) { instrument.value = saved; break; }
-    } catch {}
-  }
-  instrument.addEventListener("change", () => {
-    try { sessionStorage.setItem(instrumentKey, instrument.value); } catch {}
-    try { localStorage.setItem(instrumentKey, instrument.value); } catch {}
-  });
+  instrument.value = readStored(instrumentKey, "bell", { raw: true, validate: saved => ["bell", "keys", "pluck", "pad"].includes(saved) });
+  instrument.addEventListener("change", () => writeStored(instrumentKey, instrument.value, { raw: true }));
   const sequence = createSections("tenorion", SIZE);
   function savePattern() { sequence.save(); }
   const cells = [];
   const voices = new Set();
-  const visuals = new Set();
-  let context, master, timer, running = false, starting = false, cursor = 0;
-  let transport;
+  let context, master, running = false;
+  let transport, scheduler;
   function resetSchedule() {
     if (!running) return;
-    for (const visual of visuals) clearTimeout(visual);
-    visuals.clear();
+    scheduler?.reset();
     for (const voice of voices) if (voice.time > context.currentTime) voice.oscillator.stop();
-    cursor = wallTime() + 35;
   }
   transport = createTransport(state => {
     tempo.value = state.bpm;
@@ -134,9 +123,7 @@ if (typeof document !== "undefined") {
       labels[row].textContent = name;
       for (let column = 0; column < SIZE; column++) cells[row * SIZE + column].setAttribute("aria-label", `Шаг ${column + 1}, нота ${name}`);
     }
-    const saved = JSON.stringify(harmony);
-    try { sessionStorage.setItem(harmonyKey, saved); } catch {}
-    try { localStorage.setItem(harmonyKey, saved); } catch {}
+    writeStored(harmonyKey, harmony);
     resetSchedule();
     player.refreshLabels();
   }
@@ -194,30 +181,20 @@ if (typeof document !== "undefined") {
     },
     labelFor: key => noteLabel(key.midi + harmony.transpose + harmony.octave * 12),
   });
-  function schedule() {
-    const now = wallTime();
-    cursor = Math.max(cursor, now + 10);
-    while (true) {
-      const boundary = boundaryAfter(transport.state, cursor);
-      if (boundary.time > now + 200) break;
-      const nextTime = context.currentTime + (boundary.time - now) / 1000;
-      const position = sectionPosition(boundary.step);
-      const { section, column } = position;
+  scheduler = createScheduler({
+    onError() { stop(); play.textContent = 'Повторить'; },
+    context: () => context, transport: () => transport.state,
+    onStep({ step, time }) {
+      const { section, column } = sectionPosition(step);
       const rows = sequence.state.patterns[section].flatMap((row, index) => row[column] ? [index] : []);
-      for (const row of rows) soundMidi(rowMidi(row, harmony), nextTime, 0.22 / Math.max(1, rows.length));
-      const visual = setTimeout(() => {
-        visuals.delete(visual);
-        sectionView.showStep(position);
-      }, Math.max(0, (nextTime - context.currentTime) * 1000));
-      visuals.add(visual);
-      cursor = boundary.time + 1;
-    }
-  }
+      for (const row of rows) soundMidi(rowMidi(row, harmony), time, 0.22 / Math.max(1, rows.length));
+    },
+    onVisual: step => sectionView.showStep(sectionPosition(step)),
+  });
   function stop() {
+    playback.cancelStart();
     running = false;
-    clearInterval(timer);
-    for (const visual of visuals) clearTimeout(visual);
-    visuals.clear();
+    scheduler.stop();
     for (const voice of voices) {
       if (voice.live) continue;
       voice.gain.gain.cancelScheduledValues(context.currentTime);
@@ -228,23 +205,9 @@ if (typeof document !== "undefined") {
     play.textContent = "▶ Играть";
     play.setAttribute("aria-pressed", "false");
   }
-  play.addEventListener("click", async () => {
-    if (starting) return;
-    if (running) return stop();
-    starting = true;
-    play.disabled = true;
-    try {
-      await ensureAudio();
-      running = true;
-      transport.refresh();
-      cursor = wallTime() + 35;
-      play.textContent = "■ Стоп";
-      play.setAttribute("aria-pressed", "true");
-      schedule();
-      timer = setInterval(schedule, 25);
-    } catch {
-      play.textContent = "Повторить";
-    } finally { starting = false; play.disabled = false; }
+  const playback = bindPlayback(play, {
+    prepare: ensureAudio, isRunning: () => running, stop,
+    start() { running = true; transport.refresh(); scheduler.start(); },
   });
   function updateTempo() {
     const bpm = Math.min(240, Math.max(40, Number(tempo.value) || 110));
@@ -261,5 +224,5 @@ if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) { transport.refresh(); resetSchedule(); }
   });
-  window.addEventListener("pagehide", stop);
+  window.addEventListener("pagehide", event => { stop(); if (!event.persisted) transport.close(); });
 }

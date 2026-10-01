@@ -1,5 +1,5 @@
-import { buildKeyMap, ROWS } from "./keyboard-map.mjs?v=6";
-import { bindKeyInput } from "./live-keyboard.mjs?v=6";
+import { buildKeyMap, ROWS } from "../../core/keyboard-map.mjs?v=274f22366041";
+import { bindKeyInput } from "../../core/live-keyboard.mjs?v=274f22366041";
 export { buildKeyMap };
 
 export function releaseVoice(voice, now) {

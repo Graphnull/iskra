@@ -13,15 +13,15 @@ export function changeTempo(state, bpm, sender) {
 }
 const valid = state => state && Number.isFinite(state.bpm) && state.bpm >= 40 && state.bpm <= 240
   && Number.isSafeInteger(state.revision) && state.revision >= 0 && typeof state.sender === "string";
-export function createTransport(onChange, onAvailability) {
+export function createTransport(onChange = () => {}, onAvailability = () => {}) {
   const key = "piano-shared-transport-v1";
   const sender = crypto.randomUUID();
-  let state = { ...DEFAULT_TRANSPORT }, channel;
+  let state = { ...DEFAULT_TRANSPORT }, channel, closed = false;
   function read() {
     try { const stored = JSON.parse(localStorage.getItem(key)); return valid(stored) ? stored : null; } catch { return null; }
   }
   function accept(candidate) {
-    if (!valid(candidate)) return;
+    if (closed || !valid(candidate)) return;
     if (candidate.revision < state.revision || (candidate.revision === state.revision && candidate.sender <= state.sender)) return;
     state = { bpm: candidate.bpm, revision: candidate.revision, sender: candidate.sender };
     onChange(state);
@@ -36,11 +36,14 @@ export function createTransport(onChange, onAvailability) {
     channel.postMessage({ type: "hello" });
     onAvailability(true);
   } catch { onAvailability(false); }
-  window.addEventListener("storage", event => { if (event.key === key) accept(read()); });
+  const onStorage = event => { if (event.key === key) accept(read()); };
+  window.addEventListener("storage", onStorage);
   return {
     get state() { return state; },
     async setTempo(bpm) {
+      if (closed || !Number.isFinite(bpm) || bpm < 40 || bpm > 240) return;
       const update = () => {
+        if (closed) return;
         accept(read());
         if (bpm === state.bpm) return;
         const next = changeTempo(state, bpm, sender);
@@ -52,7 +55,7 @@ export function createTransport(onChange, onAvailability) {
         try { await navigator.locks.request(key, update); } catch { update(); }
       } else update();
     },
-    refresh() { accept(read()); channel?.postMessage({ type: "hello" }); },
-    close() { channel?.close(); },
+    refresh() { if (closed) return; accept(read()); channel?.postMessage({ type: "hello" }); },
+    close() { closed = true; channel?.close(); window.removeEventListener("storage", onStorage); },
   };
 }

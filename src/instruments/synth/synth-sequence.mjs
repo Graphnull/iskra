@@ -1,9 +1,7 @@
-export const SYNTH_STEPS = 16;
+import { SECTION_STEPS, sectionPosition } from '../../core/sections.mjs?v=274f22366041';
+export const SYNTH_STEPS = SECTION_STEPS;
 export const SYNTH_ROWS = 16;
-export function synthPosition(step) {
-  const position = ((step % 64) + 64) % 64;
-  return { section: Math.floor(position / SYNTH_STEPS), column: position % SYNTH_STEPS };
-}
+export const synthPosition = sectionPosition;
 export function noteAt(notes, row, column) {
   return notes.find(note => note.row === row && column >= note.start && column < note.start + note.length);
 }
@@ -11,17 +9,18 @@ export function putNote(notes, row, start, length) {
   const next = { row, start, length: Math.min(length, SYNTH_STEPS - start) };
   return [...notes.filter(note => note.row !== row || note.start + note.length <= start || note.start >= start + next.length), next];
 }
-export function restoreSynth(saved) {
+export function restoreSynth(saved, { strict = false } = {}) {
   const empty = () => ({ version: 2, selected: 0, octave: 0, sound: 'pad', waveform: 'triangle', root: 60, loop: true, length: 4, cutoff: 4500, resonance: 0.7, attack: 0.015, decay: 0.4, sustain: 0.7, release: 0.35, sections: [[], [], [], []] });
-  if (![1,2].includes(saved?.version) || !Array.isArray(saved.sections) || saved.sections.length !== 4) return empty();
+  const fallback = () => strict ? null : empty();
+  if (![1,2].includes(saved?.version) || !Array.isArray(saved.sections) || saved.sections.length !== 4) return fallback();
   const state = empty();
   const oldSteps = saved.version === 1 ? 64 : SYNTH_STEPS;
   for (let section = 0; section < 4; section++) {
     const notes = saved.sections[section];
-    if (!Array.isArray(notes) || notes.length > SYNTH_ROWS * oldSteps) return empty();
+    if (!Array.isArray(notes) || notes.length > SYNTH_ROWS * oldSteps) return fallback();
     for (const note of notes) {
       if (!note || ![note.row,note.start,note.length].every(Number.isInteger) || note.row < 0 || note.row >= SYNTH_ROWS
-        || note.start < 0 || note.start >= oldSteps || note.length < 1 || note.start + note.length > oldSteps) return empty();
+        || note.start < 0 || note.start >= oldSteps || note.length < 1 || note.start + note.length > oldSteps) return fallback();
       const ratio = oldSteps / SYNTH_STEPS;
       const start = Math.floor(note.start / ratio);
       const length = Math.max(1, Math.ceil((note.start + note.length) / ratio) - start);

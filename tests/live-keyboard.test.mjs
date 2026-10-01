@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bindKeyInput } from './live-keyboard.mjs';
-import { buildKeyMap } from './keyboard-map.mjs';
-import { DRUM_BINDINGS, drumForMidi } from './drum-notes.mjs';
+import { bindKeyInput } from '../src/core/live-keyboard.mjs';
+import { buildKeyMap } from '../src/core/keyboard-map.mjs';
+import { DRUM_BINDINGS, drumForMidi } from '../src/instruments/drums/drum-notes.mjs';
 
 test('all canonical drum notes match the shared physical piano keys across octaves', () => {
   const keys = buildKeyMap();
