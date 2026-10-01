@@ -38,7 +38,7 @@ export function bindKeyInput({ onNoteOn, onNoteOff = () => {}, onHighlight = () 
   return { start, end, releaseAll };
 }
 
-export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${key.note}${key.octave}` }) {
+export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${key.note}${key.octave}`, controlPanel = null }) {
   const main = document.querySelector('main');
   const grid = main.querySelector('.light-grid, .drum-grid');
   const header = main.querySelector('header');
@@ -48,14 +48,15 @@ export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${ke
   header.append(actions);
   const focus = actions.querySelector('.live-focus');
   const toggle = actions.querySelector('.view-toggle');
-  const panel = document.createElement('section');
-  panel.className = 'live-keys';
+  const panel = controlPanel || document.createElement('section');
+  if (!controlPanel) panel.className = 'live-keys';
   panel.hidden = true;
-  panel.setAttribute('aria-label', 'Игра с клавиатуры, мышью или касанием');
+  if (!controlPanel) panel.setAttribute('aria-label', 'Игра с клавиатуры, мышью или касанием');
+  toggle.textContent = controlPanel ? 'Пульт' : 'Клавиши';
   grid.before(panel);
   const buttons = new Map();
   const input = bindKeyInput({ onNoteOn, onNoteOff, onHighlight(key, active) { buttons.get(key.code)?.classList.toggle('is-active', active); } });
-  for (const row of ['upper-keyboard', 'lower-keyboard']) {
+  for (const row of (controlPanel ? [] : ['upper-keyboard', 'lower-keyboard'])) {
     const keys = buildKeyMap().filter(key => key.row === row);
     const keyboard = document.createElement('div');
     keyboard.className = 'keyboard';
@@ -86,6 +87,7 @@ export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${ke
   function refreshLabels() {
     for (const key of buildKeyMap()) {
       const button = buttons.get(key.code);
+      if (!button) continue;
       const label = labelFor(key);
       button.setAttribute('aria-label', `${label}, клавиша ${key.label}`);
       button.querySelector('.note').textContent = label;
@@ -105,7 +107,7 @@ export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${ke
     const show = panel.hidden;
     panel.hidden = !show;
     grid.hidden = show;
-    toggle.textContent = show ? 'Сетка' : 'Клавиши';
+    toggle.textContent = show ? 'Сетка' : controlPanel ? 'Пульт' : 'Клавиши';
     toggle.setAttribute('aria-pressed', String(show));
     input.releaseAll();
   });

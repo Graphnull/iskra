@@ -268,3 +268,16 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 [data-theme="light"] .sample-track .sample-record { color: #a85f57; }
 [data-theme="light"] .sample-track .sample-record.is-recording { background: #a85f57; color: #fff; }
 [data-theme="light"] .sample-track .sample-preview.has-sample { border-color: #348b44; color: #285333; }
+
+.synth-panel { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 6px; border: 1px solid #60605a; border-radius: 12px; background: #222220; }
+.synth-knob { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 0; font-size: 10px; color: #bcbab2; }
+.knob-dial { position: relative; display: block; width: clamp(30px, 10vh, 64px); height: clamp(30px, 10vh, 64px); border-radius: 50%; background: radial-gradient(circle at 35% 25%, #55554f, #292927 75%); border: 1px solid #77746b; box-shadow: 0 2px 4px #0005; }
+.knob-pointer { position: absolute; inset: 4px; transform: rotate(var(--angle)); pointer-events: none; }
+.knob-pointer::before { content: ''; display: block; width: 3px; height: 30%; margin: 0 auto; background: #dc827a; border-radius: 2px; }
+.knob-dial input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+.knob-dial:focus-within { outline: 2px solid #dc827a; outline-offset: 2px; }
+.synth-knob output { color: #f2f1ea; font-size: 10px; font-variant-numeric: tabular-nums; }
+[data-theme="light"] .synth-panel { background: #eeede8; border-color: #bdb9ad; }
+[data-theme="light"] .synth-knob { color: #646259; }
+[data-theme="light"] .synth-knob output { color: #39382f; }
+[data-theme="light"] .knob-dial { background: radial-gradient(circle at 35% 25%, #fff, #d2cec2 75%); border-color: #9f9b8e; box-shadow: 0 2px 4px #5553; }

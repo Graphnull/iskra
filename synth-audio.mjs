@@ -1,9 +1,10 @@
 export function releaseVoice(context, voice, at = context.currentTime) {
   if (!voice || voice.released) return;
   voice.released = true;
-  voice.gain.gain.cancelScheduledValues(at);
-  voice.gain.gain.setTargetAtTime(0.0001, at, 0.055);
-  voice.source.stop(at + 0.35);
+  if (voice.gain.gain.cancelAndHoldAtTime) voice.gain.gain.cancelAndHoldAtTime(at);
+  else voice.gain.gain.cancelScheduledValues(at);
+  voice.gain.gain.setTargetAtTime(0.0001, at, voice.release === undefined ? 0.055 : voice.release / 6.36);
+  voice.source.stop(at + (voice.release ?? 0.35));
 }
 export function synthVoice(context, master, settings, midi, time, duration = null, live = false) {
   const useSample = settings.sound === 'sample';
@@ -24,9 +25,14 @@ export function synthVoice(context, master, settings, midi, time, duration = nul
     }
   }
   const gain = context.createGain(), filter = context.createBiquadFilter();
-  filter.type = 'lowpass'; filter.frequency.value = settings.cutoff; filter.Q.value = 0.7;
+  filter.type = 'lowpass'; filter.frequency.value = settings.cutoff; filter.Q.value = settings.resonance ?? 0.7;
   gain.gain.setValueAtTime(0.0001, time);
-  if (settings.sound === 'bass') {
+  if (Number.isFinite(settings.attack)) {
+    const peak = settings.sound === 'bass' ? 0.42 : useSample ? 0.45 : 0.18;
+    gain.gain.exponentialRampToValueAtTime(peak, time + settings.attack);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * settings.sustain), time + settings.attack + settings.decay);
+    if (settings.sound === 'bass') gain.gain.exponentialRampToValueAtTime(0.0001, time + settings.attack + settings.decay + 8);
+  } else if (settings.sound === 'bass') {
     gain.gain.exponentialRampToValueAtTime(0.42, time + 0.003);
     gain.gain.exponentialRampToValueAtTime(0.3, time + 0.12);
     gain.gain.exponentialRampToValueAtTime(0.035, time + 4);
@@ -34,7 +40,7 @@ export function synthVoice(context, master, settings, midi, time, duration = nul
   } else gain.gain.exponentialRampToValueAtTime(useSample ? 0.45 : 0.18, time + 0.015);
   source.connect(filter).connect(gain).connect(master);
   source.start(time);
-  const voice = {source,gain,filter,time,live,released:false};
+  const voice = {source,gain,filter,time,live,release:settings.release,released:false};
   if (duration !== null) releaseVoice(context, voice, time + Math.max(0.025,duration));
   return voice;
 }

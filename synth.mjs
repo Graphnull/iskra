@@ -1,9 +1,9 @@
-import { synthVoice, releaseVoice } from './synth-audio.mjs?v=13';
+import { synthVoice, releaseVoice } from './synth-audio.mjs?v=14';
 import { widgetStorageKey } from './widget-storage.mjs?v=8';
-import { mountLiveKeyboard } from './live-keyboard.mjs?v=6';
+import { mountLiveKeyboard } from './live-keyboard.mjs?v=14';
 import { createTransport, boundaryAfter, wallTime } from './transport.mjs?v=2';
 import { noteLabel } from './scales.mjs?v=4';
-import { SYNTH_ROWS, SYNTH_STEPS, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes } from './synth-sequence.mjs?v=13';
+import { SYNTH_ROWS, SYNTH_STEPS, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes } from './synth-sequence.mjs?v=14';
 import { createMicrophone, microphoneError, sampleBounds } from './microphone.mjs?v=11';
 import { sampleStore } from './sample-store.mjs?v=11';
 
@@ -21,7 +21,6 @@ document.querySelector('main').outerHTML = `
   <div class="synth-tools">
     <label>Длина <select id="length" aria-label="Длина ноты в шагах">${[1,2,4,8,16].map(n=>`<option value="${n}"${n===4?' selected':''}>${n}</option>`).join('')}</select></label>
     <label>Октава <input id="octave" type="number" min="-2" max="2" value="0" aria-label="Сдвиг октавы"></label>
-    <label class="filter-control">Фильтр <input id="filter" type="range" min="200" max="10000" value="4500" aria-label="Фильтр звука"></label>
   </div>
   <div class="sample-controls">
     <button id="record" type="button">● Микрофон</button>
@@ -44,7 +43,7 @@ for (const storageName of ['sessionStorage','localStorage']) {
 }
 $('sound').value = state.sound === 'sample' ? 'pad' : state.sound;
 $('octave').value = state.octave; $('root').value = state.root; $('loop').checked = state.loop;
-$('length').value = state.length; $('filter').value = state.cutoff;
+$('length').value = state.length;
 function save() {
   for (const name of ['sessionStorage','localStorage']) { try { window[name].setItem(stateKey, JSON.stringify(state)); } catch {} }
 }
@@ -61,7 +60,7 @@ function audioContext() {
 async function ensureAudio() { await audioContext().resume(); }
 function release(voice) { if(context) releaseVoice(context,voice); }
 function sound(midi,time,duration=null,live=false) {
-  const voice=synthVoice(context,master,{sound:$('sound').value,sample,root:state.root,loop:state.loop,cutoff:Number($('filter').value)},midi,time,duration,live);
+  const voice=synthVoice(context,master,{...state,sound:$('sound').value,sample},midi,time,duration,live);
   if(!voice)return null;
   voices.add(voice);
   voice.source.onended=()=>{voices.delete(voice);voice.source.disconnect();voice.gain.disconnect();voice.filter.disconnect();};
@@ -126,7 +125,23 @@ function render() {
   });
 }
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>{drag=null; state.selected=Number(button.dataset.section); save(); render();}));
-const player=mountLiveKeyboard({async onNoteOn(key){await ensureAudio();return sound(key.midi+pitchOffset(),context.currentTime,null,true);},onNoteOff:voice=>release(voice),labelFor:key=>noteLabel(key.midi+pitchOffset())});
+const controlPanel=document.createElement('section');
+controlPanel.className='synth-panel'; controlPanel.setAttribute('aria-label','Пульт синтезатора');
+const knobs=[['cutoff','Фильтр',200,10000,'Hz'],['resonance','Резонанс',0,12,'Q'],['attack','Атака',0.003,2,'s'],['decay','Затухание',0.02,8,'s'],['sustain','Удержание',0,1,'%'],['release','Отпускание',0.05,4,'s']];
+const refreshKnobs=[];
+for(const [key,label,min,max,unit] of knobs){
+  const item=document.createElement('label');item.className='synth-knob';
+  item.innerHTML=`<span>${label}</span><span class="knob-dial"><input type="range" min="0" max="1000" step="1" aria-label="${label}"><span class="knob-pointer"></span></span><output></output>`;
+  const input=item.querySelector('input'),output=item.querySelector('output');
+  const logarithmic=unit==='s'||key==='cutoff';
+  const decode=x=>logarithmic?min*(max/min)**(x/1000):min+(max-min)*x/1000;
+  const encode=x=>logarithmic?Math.log(x/min)/Math.log(max/min)*1000:(x-min)/(max-min)*1000;
+  function refresh(){input.value=Math.round(encode(state[key]));item.style.setProperty('--angle',`${Number(input.value)*0.27-135}deg`);output.textContent=unit==='s'?`${Math.round(state[key]*1000)} мс`:unit==='%'?`${Math.round(state[key]*100)}%`:unit==='Hz'?`${Math.round(state[key])} Гц`:state[key].toFixed(1);input.setAttribute('aria-valuetext',output.textContent);}
+  input.addEventListener('input',()=>{state[key]=decode(Number(input.value));refresh();save();if(context)for(const voice of voices){if(key==='cutoff')voice.filter.frequency.setTargetAtTime(state.cutoff,context.currentTime,.02);if(key==='resonance')voice.filter.Q.setTargetAtTime(state.resonance,context.currentTime,.02);}});
+  refreshKnobs.push(refresh);refresh();controlPanel.append(item);
+}
+document.querySelector('.sequencer-hint').textContent='Нажми — нота · протяни — длина · Пульт — настройки звука';
+const player=mountLiveKeyboard({controlPanel,async onNoteOn(key){await ensureAudio();return sound(key.midi+pitchOffset(),context.currentTime,null,true);},onNoteOff:voice=>release(voice),labelFor:key=>noteLabel(key.midi+pitchOffset())});
 function schedule(){
   const now=wallTime(); cursor=Math.max(cursor,now+10);
   while(true){
@@ -151,11 +166,11 @@ $('play').addEventListener('click',async()=>{
 $('tempo').addEventListener('change',()=>{const bpm=Math.min(240,Math.max(40,Number($('tempo').value)||110));$('tempo').value=bpm;transport.setTempo(bpm);});
 $('clear').addEventListener('click',()=>{state.sections[state.selected]=[];save();render();resetSchedule();});
 $('octave').addEventListener('change',()=>{state.octave=Math.min(2,Math.max(-2,Math.round(Number($('octave').value)||0)));$('octave').value=state.octave;save();render();player.refreshLabels();resetSchedule();});
-$('sound').addEventListener('change',()=>{state.sound=$('sound').value;save();render();player.refreshLabels();resetSchedule();});
+$('sound').addEventListener('change',()=>{state.sound=$('sound').value;Object.assign(state,state.sound==='bass'?{attack:.003,decay:4,sustain:.083,release:.35}:{attack:.015,decay:.4,sustain:.7,release:.35});refreshKnobs.forEach(refresh=>refresh());save();render();player.refreshLabels();resetSchedule();});
 $('root').addEventListener('change',()=>{state.root=Number($('root').value);save();resetSchedule();});
 $('loop').addEventListener('change',()=>{state.loop=$('loop').checked;save();resetSchedule();});
 $('length').addEventListener('change',()=>{state.length=Number($('length').value);save();});
-$('filter').addEventListener('input',()=>{state.cutoff=Number($('filter').value);save();if(context)for(const voice of voices)voice.filter.frequency.setTargetAtTime(state.cutoff,context.currentTime,0.02);});
+
 async function loadSample(blob, persist=true){
   const ctx=audioContext(),decoded=await ctx.decodeAudioData(await blob.arrayBuffer());
   if(decoded.duration>12)throw new Error('Семпл длиннее 10 секунд. Запиши короче.');

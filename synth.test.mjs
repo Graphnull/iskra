@@ -84,3 +84,15 @@ test('previous four-page patterns retain all four sections when shortened',()=>{
   assert.deepEqual(state.sections[2],[{row:2,start:0,length:16}]);
   assert.equal(state.selected,2);assert.equal(state.length,16);assert.equal(state.version,2);
 });
+
+test('synth knobs persist with range validation and control envelope and resonance',()=>{
+  const state=restoreSynth(null);Object.assign(state,{attack:.2,decay:1.2,sustain:.4,release:2,resonance:7});
+  assert.deepEqual(restoreSynth(JSON.parse(JSON.stringify(state))),state);
+  assert.equal(restoreSynth({...state,attack:-1,resonance:Infinity}).attack,.015);
+  const context=audioMock(),voice=synthVoice(context,{},state,69,3,null,true);
+  assert.equal(voice.filter.Q.value,7);
+  assert.ok(voice.gain.gain.calls.some(c=>c[0]==='ramp'&&c[2]===3.2));
+  assert.ok(voice.gain.gain.calls.some(c=>c[0]==='ramp'&&Math.abs(c[1]-.072)<1e-8&&c[2]===4.4));
+  releaseVoice(context,voice,5);assert.equal(voice.source.stopped,7);
+  assert.deepEqual(voice.gain.gain.calls.at(-1),['target',.0001,5,2/6.36]);
+});

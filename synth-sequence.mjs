@@ -12,7 +12,7 @@ export function putNote(notes, row, start, length) {
   return [...notes.filter(note => note.row !== row || note.start + note.length <= start || note.start >= start + next.length), next];
 }
 export function restoreSynth(saved) {
-  const empty = () => ({ version: 2, selected: 0, octave: 0, sound: 'pad', root: 60, loop: true, length: 4, cutoff: 4500, sections: [[], [], [], []] });
+  const empty = () => ({ version: 2, selected: 0, octave: 0, sound: 'pad', root: 60, loop: true, length: 4, cutoff: 4500, resonance: 0.7, attack: 0.015, decay: 0.4, sustain: 0.7, release: 0.35, sections: [[], [], [], []] });
   if (![1,2].includes(saved?.version) || !Array.isArray(saved.sections) || saved.sections.length !== 4) return empty();
   const state = empty();
   const oldSteps = saved.version === 1 ? 64 : SYNTH_STEPS;
@@ -35,6 +35,10 @@ export function restoreSynth(saved) {
   if (typeof saved.loop === 'boolean') state.loop = saved.loop;
   if ([1,2,4,8,16,32,64].includes(saved.length)) state.length = Math.min(16, saved.version === 1 ? Math.max(1, Math.ceil(saved.length / 4)) : saved.length);
   if (Number.isFinite(saved.cutoff) && saved.cutoff >= 200 && saved.cutoff <= 10000) state.cutoff = saved.cutoff;
+  for (const [key,min,max] of [['resonance',0,12],['attack',0.003,2],['decay',0.02,8],['sustain',0,1],['release',0.05,4]]) {
+    if (Number.isFinite(saved[key]) && saved[key] >= min && saved[key] <= max) state[key] = saved[key];
+  }
+  if (state.sound === 'bass' && !Number.isFinite(saved.attack)) Object.assign(state,{attack:.003,decay:4,sustain:.083});
   return state;
 }
 export function activeSynthNotes(state, step) {
