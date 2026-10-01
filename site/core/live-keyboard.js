@@ -1,5 +1,5 @@
-import { targetElement } from "./dom.js?v=4a0ac5e04eca";
-import { buildKeyMap } from "./keyboard-map.js?v=4a0ac5e04eca";
+import { targetElement } from "./dom.js?v=77f7a8b0c2bf";
+import { buildKeyMap } from "./keyboard-map.js?v=77f7a8b0c2bf";
 export function bindKeyInput({ onNoteOn, onNoteOff = () => { }, onHighlight = () => { }, }) {
     const keys = new Map(buildKeyMap().map((key) => [key.code, key]));
     const held = new Map();

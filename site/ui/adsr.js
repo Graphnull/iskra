@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useRef } from "react";
-import { ENVELOPE_RANGES, envelopeGeometry, envelopeText, envelopeRatio, envelopeValue, envelopeDrag, } from "../core/envelope.js?v=4a0ac5e04eca";
+import { ENVELOPE_RANGES, envelopeGeometry, envelopeText, envelopeRatio, envelopeValue, envelopeDrag, } from "../core/envelope.js?v=77f7a8b0c2bf";
 const STAGES = [
     "attack",
     "decay",

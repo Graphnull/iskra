@@ -47,6 +47,8 @@ test('record opens a separate window, stops pending playback and accepts only it
     model.setSampleSettings(2,{gain:3,start:.05});
     assert.deepEqual(createDrums().sampleSettings[2],{gain:3,start:.05});assert.deepEqual(model.sampleSettings[0],{gain:1,start:0});
     model.openSample(null);model.openSample(0);assert.equal(model.editingSlot,null);
+    window.dispatchEvent(new window.MessageEvent('message',{source:popup,origin:location.origin,data:{type:'sample-ready',session}}));await new Promise(r=>setImmediate(r));
+    assert.equal(received.at(-1).type,'sample-loaded');assert.equal(received.at(-1).settings.gain,3);assert.equal(received.at(-1).settings.start,.05);assert.ok(received.at(-1).blob instanceof Blob);
     model.record(2);deliver(popup,location.origin);await new Promise(r=>setImmediate(r));assert.deepEqual(model.sampleSettings[2],{gain:2,start:.04});
     window.open=()=>null;model.record(1);assert.equal(model.recordWindow,true);assert.match(model.status,/Разреши всплывающее/);
   }finally{cleanup();window.open=originalOpen;delete window.AudioContext;delete globalThis.location;}

@@ -1,4 +1,4 @@
-import { at, required } from "./guards.js?v=4a0ac5e04eca";
+import { at, required } from "./guards.js?v=77f7a8b0c2bf";
 const WHITE_NOTES = ["C", "D", "E", "F", "G", "A", "B"];
 const BLACK_NOTES = {
     0: "C♯",

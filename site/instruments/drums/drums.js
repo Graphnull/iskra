@@ -1,14 +1,14 @@
-import { readStored, writeStored } from "../../core/storage.js?v=4a0ac5e04eca";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=4a0ac5e04eca";
-import { audioContext } from "../../core/dom.js?v=4a0ac5e04eca";
-import { at, isRecord } from "../../core/guards.js?v=4a0ac5e04eca";
-import { createObservable } from "../../core/observable.js?v=4a0ac5e04eca";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=4a0ac5e04eca";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=4a0ac5e04eca";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=4a0ac5e04eca";
-import { sampleStore } from "../../core/sample-store.js?v=4a0ac5e04eca";
-import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=4a0ac5e04eca";
-import { createSections, sectionPosition } from "../../core/sections.js?v=4a0ac5e04eca";
+import { readStored, writeStored } from "../../core/storage.js?v=77f7a8b0c2bf";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=77f7a8b0c2bf";
+import { audioContext } from "../../core/dom.js?v=77f7a8b0c2bf";
+import { at, isRecord } from "../../core/guards.js?v=77f7a8b0c2bf";
+import { createObservable } from "../../core/observable.js?v=77f7a8b0c2bf";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=77f7a8b0c2bf";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=77f7a8b0c2bf";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=77f7a8b0c2bf";
+import { sampleStore } from "../../core/sample-store.js?v=77f7a8b0c2bf";
+import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=77f7a8b0c2bf";
+import { createSections, sectionPosition } from "../../core/sections.js?v=77f7a8b0c2bf";
 export const TRACKS = [
     "Бочка",
     "Снейр",
@@ -26,6 +26,7 @@ export const TRACKS = [
 export function createDrums() {
     const observable = createObservable(), sequence = createSections("drum", TRACKS.length, { previousRows: [8] });
     const samples = Array.from({ length: 4 }, () => null);
+    const sampleBlobs = Array.from({ length: 4 }, () => null);
     const sampleKeys = Array.from({ length: 4 }, (_, slot) => widgetStorageKey(`drum-sample-${slot + 1}-v1`));
     const settingsKey = widgetStorageKey("drum-sample-settings-v1");
     const savedSettings = readStored(settingsKey, []);
@@ -170,6 +171,7 @@ export function createDrums() {
         if (disposed || activeLifecycle !== lifecycle)
             return;
         samples[slot] = buffer;
+        sampleBlobs[slot] = blob;
         sampleSettings[slot] = restoreSampleSettings(persist ? settings : sampleSettings[slot], buffer.duration);
         if (persist) {
             editingSlot = slot;
@@ -218,7 +220,7 @@ export function createDrums() {
                 if (entry.popup.closed)
                     recordWindows.delete(key);
             recordWindows.set(session, { popup, slot });
-            showStatus(`Семпл ${slot + 1} · запиши звук в открывшемся окне`);
+            showStatus(`Семпл ${slot + 1} · запись и настройки в открывшемся окне`);
         }
         else {
             recordWindow = true;
@@ -232,9 +234,31 @@ export function createDrums() {
         const entry = recordWindows.get(data.session);
         if (event.origin !== location.origin ||
             !entry ||
-            event.source !== entry.popup ||
-            data.type !== "drum-sample" ||
-            !(data.blob instanceof Blob))
+            event.source !== entry.popup)
+            return;
+        if (data.type === "sample-ready") {
+            const activeLifecycle = lifecycle;
+            try {
+                const blob = sampleBlobs[entry.slot] ??
+                    (await sampleStore(at(sampleKeys, entry.slot)));
+                if (disposed || lifecycle !== activeLifecycle)
+                    return;
+                entry.popup.postMessage(blob instanceof Blob
+                    ? {
+                        type: "sample-loaded",
+                        session: data.session,
+                        blob,
+                        settings: at(sampleSettings, entry.slot),
+                    }
+                    : { type: "sample-empty", session: data.session }, location.origin);
+            }
+            catch {
+                if (!disposed && lifecycle === activeLifecycle)
+                    entry.popup.postMessage({ type: "sample-empty", session: data.session }, location.origin);
+            }
+            return;
+        }
+        if (data.type !== "drum-sample" || !(data.blob instanceof Blob))
             return;
         try {
             await installSample(entry.slot, data.blob, true, data.settings);

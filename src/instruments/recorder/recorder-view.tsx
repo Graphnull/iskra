@@ -27,21 +27,32 @@ export function Recorder() {
     session = parameters.get("session");
   const slot = Number(parameters.get("slot") ?? 0);
   useEffect(() => {
-    let disposed = false;
+    let disposed = false,
+      acceptingSaved = true,
+      revision = 0;
+    async function loadClip(blob: Blob, value: unknown) {
+      const generation = ++revision;
+      if (!context.current) context.current = audioContext();
+      const buffer = await decodeDrumSample(context.current, blob);
+      if (disposed || generation !== revision) return;
+      setSettings(restoreSampleSettings(value, buffer.duration));
+      setClip({ blob, buffer });
+      setStatus("Настрой звук и нажми «Сохранить в инструмент».");
+    }
     const mic = createMicrophone({
       onState(next, count = 0) {
+        if (next === "requesting" || next === "recording") {
+          acceptingSaved = false;
+          revision++;
+        }
         if (!disposed) {
           setState(next);
           setSeconds(count);
         }
       },
       async onBlob(blob) {
-        if (!context.current) context.current = audioContext();
-        const buffer = await decodeDrumSample(context.current, blob);
-        if (disposed) return;
-        setSettings({ gain: 1, start: 0 });
-        setClip({ blob, buffer });
-        setStatus("Настрой звук и нажми «Сохранить в инструмент».");
+        acceptingSaved = false;
+        await loadClip(blob, null);
       },
       onError: (error) => {
         if (!disposed) setStatus(microphoneError(error));
@@ -57,6 +68,16 @@ export function Recorder() {
         data.session !== session
       )
         return;
+      if (
+        data.type === "sample-loaded" &&
+        data.blob instanceof Blob &&
+        acceptingSaved
+      ) {
+        acceptingSaved = false;
+        void loadClip(data.blob, data.settings).catch((error) => {
+          if (!disposed) setStatus(microphoneError(error));
+        });
+      }
       if (data.type === "sample-received") {
         setSending(false);
         setStatus("Сохранено. Можно вернуться в инструмент.");
@@ -78,6 +99,11 @@ export function Recorder() {
     };
     window.addEventListener("message", message);
     window.addEventListener("pagehide", dispose);
+    if (window.opener && session)
+      window.opener.postMessage(
+        { type: "sample-ready", session },
+        location.origin,
+      );
     return () => {
       dispose();
       microphone.current = null;

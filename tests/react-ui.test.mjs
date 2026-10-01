@@ -138,13 +138,22 @@ test('recorder edits in its window and closes only after save confirmation',asyn
   const root=createRoot(rootElement);
   try{
     await act(async()=>root.render(createElement(Recorder)));
+    assert.equal(sent[0][0].type,'sample-ready');
+    await act(async()=>window.dispatchEvent(new window.MessageEvent('message',{source:opener,origin:'https://wrong.example',data:{type:'sample-loaded',session:'test',blob:new Blob(['stored']),settings:{gain:3,start:.1}}})));
+    assert.equal(document.querySelector('.sample-wave'),null);
+    await act(async()=>{window.dispatchEvent(new window.MessageEvent('message',{source:opener,origin:location.origin,data:{type:'sample-loaded',session:'test',blob:new Blob(['stored']),settings:{gain:3,start:.1}}}));await new Promise(r=>setImmediate(r));});
+    assert(document.querySelector('.sample-wave'));assert.equal(document.querySelector('[aria-label="Громкость семпла"]').value,'3');assert.equal(document.querySelector('[aria-label="Начало семпла"]').value,'0.1');
+    await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Записать заново').click());
+
     await act(async()=>document.querySelector('.record-large').click());
     await act(async()=>{document.querySelector('.record-large').click();await recorder.done;});
-    assert.equal(tracksStopped,1);assert(document.querySelector('.sample-wave'));assert.equal(sent.length,0);
+    assert.equal(tracksStopped,1);assert(document.querySelector('.sample-wave'));
+    await act(async()=>window.dispatchEvent(new window.MessageEvent('message',{source:opener,origin:location.origin,data:{type:'sample-loaded',session:'test',blob:new Blob(['late']),settings:{gain:4,start:.8}}})));
+    assert.equal(document.querySelector('[aria-label="Громкость семпла"]').value,'1');assert.equal(sent.filter(([data])=>data.type==='drum-sample').length,0);
     const gain=document.querySelector('[aria-label="Громкость семпла"]');
     await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(gain,'2');gain.dispatchEvent(new Event('input',{bubbles:true}));});
     await act(async()=>document.querySelector('.sample-save').click());
-    assert.equal(sent.length,1);assert.equal(sent[0][0].type,'drum-sample');assert.equal(sent[0][0].session,'test');assert.equal(sent[0][0].settings.gain,2);assert.equal(sent[0][1],location.origin);
+    const saved=sent.find(([data])=>data.type==='drum-sample');assert(saved);assert.equal(saved[0].session,'test');assert.equal(saved[0].settings.gain,2);assert.equal(saved[1],location.origin);
     await act(async()=>window.dispatchEvent(new window.MessageEvent('message',{source:opener,origin:location.origin,data:{type:'sample-received',session:'test'}})));
     assert.equal(windowClosed,1);assert.match(document.querySelector('[role=status]').textContent,/Сохранено/);
   }finally{

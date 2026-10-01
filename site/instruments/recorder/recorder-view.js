@@ -1,34 +1,43 @@
 import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from "react";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=4a0ac5e04eca";
-import { isRecord } from "../../core/guards.js?v=4a0ac5e04eca";
-import { audioContext } from "../../core/dom.js?v=4a0ac5e04eca";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=4a0ac5e04eca";
-import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=4a0ac5e04eca";
-import { SampleEditor } from "../../ui/sample-editor.js?v=4a0ac5e04eca";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=77f7a8b0c2bf";
+import { isRecord } from "../../core/guards.js?v=77f7a8b0c2bf";
+import { audioContext } from "../../core/dom.js?v=77f7a8b0c2bf";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=77f7a8b0c2bf";
+import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=77f7a8b0c2bf";
+import { SampleEditor } from "../../ui/sample-editor.js?v=77f7a8b0c2bf";
 export function Recorder() {
     const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState("Запиши звук, настрой и сохрани в инструмент."), [clip, setClip] = useState(null), [settings, setSettings] = useState({ gain: 1, start: 0 }), [sending, setSending] = useState(false);
     const microphone = useRef(null), context = useRef(null), voices = useRef(new Set());
     const parameters = new URLSearchParams(location.search), session = parameters.get("session");
     const slot = Number(parameters.get("slot") ?? 0);
     useEffect(() => {
-        let disposed = false;
+        let disposed = false, acceptingSaved = true, revision = 0;
+        async function loadClip(blob, value) {
+            const generation = ++revision;
+            if (!context.current)
+                context.current = audioContext();
+            const buffer = await decodeDrumSample(context.current, blob);
+            if (disposed || generation !== revision)
+                return;
+            setSettings(restoreSampleSettings(value, buffer.duration));
+            setClip({ blob, buffer });
+            setStatus("Настрой звук и нажми «Сохранить в инструмент».");
+        }
         const mic = createMicrophone({
             onState(next, count = 0) {
+                if (next === "requesting" || next === "recording") {
+                    acceptingSaved = false;
+                    revision++;
+                }
                 if (!disposed) {
                     setState(next);
                     setSeconds(count);
                 }
             },
             async onBlob(blob) {
-                if (!context.current)
-                    context.current = audioContext();
-                const buffer = await decodeDrumSample(context.current, blob);
-                if (disposed)
-                    return;
-                setSettings({ gain: 1, start: 0 });
-                setClip({ blob, buffer });
-                setStatus("Настрой звук и нажми «Сохранить в инструмент».");
+                acceptingSaved = false;
+                await loadClip(blob, null);
             },
             onError: (error) => {
                 if (!disposed)
@@ -43,6 +52,15 @@ export function Recorder() {
                 event.source !== window.opener ||
                 data.session !== session)
                 return;
+            if (data.type === "sample-loaded" &&
+                data.blob instanceof Blob &&
+                acceptingSaved) {
+                acceptingSaved = false;
+                void loadClip(data.blob, data.settings).catch((error) => {
+                    if (!disposed)
+                        setStatus(microphoneError(error));
+                });
+            }
             if (data.type === "sample-received") {
                 setSending(false);
                 setStatus("Сохранено. Можно вернуться в инструмент.");
@@ -65,6 +83,8 @@ export function Recorder() {
         };
         window.addEventListener("message", message);
         window.addEventListener("pagehide", dispose);
+        if (window.opener && session)
+            window.opener.postMessage({ type: "sample-ready", session }, location.origin);
         return () => {
             dispose();
             microphone.current = null;
