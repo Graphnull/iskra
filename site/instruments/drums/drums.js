@@ -1,14 +1,14 @@
-import { readStored, writeStored } from "../../core/storage.js?v=ee6d7c71cf26";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=ee6d7c71cf26";
-import { audioContext } from "../../core/dom.js?v=ee6d7c71cf26";
-import { at, isRecord } from "../../core/guards.js?v=ee6d7c71cf26";
-import { createObservable } from "../../core/observable.js?v=ee6d7c71cf26";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=ee6d7c71cf26";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=ee6d7c71cf26";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=ee6d7c71cf26";
-import { sampleStore } from "../../core/sample-store.js?v=ee6d7c71cf26";
-import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=ee6d7c71cf26";
-import { createSections, sectionPosition } from "../../core/sections.js?v=ee6d7c71cf26";
+import { readStored, writeStored } from "../../core/storage.js?v=06d05f371f9a";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=06d05f371f9a";
+import { audioContext } from "../../core/dom.js?v=06d05f371f9a";
+import { at, isRecord } from "../../core/guards.js?v=06d05f371f9a";
+import { createObservable } from "../../core/observable.js?v=06d05f371f9a";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=06d05f371f9a";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=06d05f371f9a";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=06d05f371f9a";
+import { sampleStore } from "../../core/sample-store.js?v=06d05f371f9a";
+import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=06d05f371f9a";
+import { createSections, sectionPosition } from "../../core/sections.js?v=06d05f371f9a";
 export const TRACKS = [
     "Бочка",
     "Снейр",
@@ -212,14 +212,17 @@ export function createDrums() {
         url.searchParams.set("session", session);
         const popup = window.open(url.href, "_blank", "popup,width=376,height=376");
         if (popup) {
+            recordWindow = false;
             for (const [key, entry] of recordWindows)
                 if (entry.popup.closed)
                     recordWindows.delete(key);
             recordWindows.set(session, { popup, slot });
             showStatus(`Семпл ${slot + 1} · запиши звук в открывшемся окне`);
         }
-        else
-            showStatus("Разреши всплывающее окно для записи.");
+        else {
+            recordWindow = true;
+            showStatus("Разреши всплывающее окно для записи и нажми ещё раз.");
+        }
     }
     async function message(event) {
         const data = event.data;
@@ -361,12 +364,7 @@ export function createDrums() {
                 return;
             requestedSlot = slot;
             engine.stop();
-            const policy = document.permissionsPolicy || document.featurePolicy;
-            if (policy && !policy.allowsFeature("microphone")) {
-                openRecordWindow(slot);
-                return;
-            }
-            void mic.start();
+            openRecordWindow(slot);
         },
         openRecordWindow: () => openRecordWindow(),
         labelFor: (key) => `${key.note}${key.octave} · ${at(TRACKS, drumTrackForMidi(key.midi))}`,

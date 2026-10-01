@@ -102,25 +102,15 @@ export function Drums() {
                   type="button"
                   className={`sample-preview${sample ? " has-sample" : ""}`}
                   disabled={busy || !sample}
-                  aria-label={`Прослушать семпл ${slot + 1}`}
+                  aria-label={`Настроить семпл ${slot + 1}`}
                   title={
                     sample
-                      ? `${at(TRACKS, row)} · ${binding.note} · ${sample.duration.toFixed(1)} с`
+                      ? `Настроить ${at(TRACKS, row)} · громкость и начало`
                       : "Запиши свой звук"
                   }
-                  onClick={() => void model.preview(slot)}
-                >
-                  Семпл {slot + 1}
-                </button>
-                <button
-                  type="button"
-                  className="sample-edit"
-                  disabled={busy || !sample}
-                  aria-label={`Настроить семпл ${slot + 1}`}
-                  title="Громкость и начало"
                   onClick={() => model.openSample(slot)}
                 >
-                  ⋯
+                  Семпл {slot + 1}
                 </button>
                 <button
                   type="button"

@@ -274,11 +274,15 @@ export function createDrums() {
     url.searchParams.set("session", session);
     const popup = window.open(url.href, "_blank", "popup,width=376,height=376");
     if (popup) {
+      recordWindow = false;
       for (const [key, entry] of recordWindows)
         if (entry.popup.closed) recordWindows.delete(key);
       recordWindows.set(session, { popup, slot });
       showStatus(`Семпл ${slot + 1} · запиши звук в открывшемся окне`);
-    } else showStatus("Разреши всплывающее окно для записи.");
+    } else {
+      recordWindow = true;
+      showStatus("Разреши всплывающее окно для записи и нажми ещё раз.");
+    }
   }
   async function message(event: MessageEvent<unknown>) {
     const data = event.data;
@@ -424,12 +428,7 @@ export function createDrums() {
       if (recordState !== "idle") return;
       requestedSlot = slot;
       engine.stop();
-      const policy = document.permissionsPolicy || document.featurePolicy;
-      if (policy && !policy.allowsFeature("microphone")) {
-        openRecordWindow(slot);
-        return;
-      }
-      void mic.start();
+      openRecordWindow(slot);
     },
     openRecordWindow: () => openRecordWindow(),
     labelFor: (key: PianoKey) =>

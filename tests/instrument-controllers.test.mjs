@@ -24,32 +24,30 @@ test('Tenori-on and drums controllers preserve separate patterns and per-instrum
   assert.equal(reloadedDrums.sequence.state.selected,1);assert.equal(reloadedDrums.sequence.pattern[0][3],true);assert.equal(reloadedDrums.sequence.pattern[11][15],true);
   reloadedTenorion.clear();assert.equal(reloadedTenorion.sequence.pattern[4][7],false);assert.equal(reloadedDrums.sequence.pattern[0][3],true);
 });
-test('microphone recording cancels a pending player, fills only its sample track and releases the microphone',async()=>{
-  clear();let resume,recorder,stopped=0;
-  const originalRecorder=globalThis.MediaRecorder;
+test('record opens a separate window, stops pending playback and accepts only its own recording',async()=>{
+  clear();let resume;const received=[];
   class Buffer{constructor(channels,length,rate){this.duration=length/rate;this.numberOfChannels=channels;this.sampleRate=rate;this.channels=Array.from({length:channels},()=>new Float32Array(length).fill(.2));}getChannelData(channel){return this.channels[channel];}copyToChannel(data,channel){this.channels[channel].set(data);}}
   const node=()=>({gain:{value:0},threshold:{value:0},ratio:{value:0},connect(){return this;}});
   class Audio{currentTime=0;sampleRate=1000;destination={};resume(){return new Promise(resolve=>{resume=resolve;});}close(){return Promise.resolve();}createGain(){return node();}createDynamicsCompressor(){return node();}createBuffer(...args){return new Buffer(...args);}async decodeAudioData(){return new Buffer(1,200,1000);}}
-  class Recorder{state='inactive';mimeType='audio/webm';constructor(){recorder=this;}start(){this.state='recording';}stop(){this.state='inactive';this.ondataavailable({data:new Blob(['recording'])});this.done=this.onstop();}}
-  window.AudioContext=Audio;globalThis.MediaRecorder=Recorder;
-  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{async getUserMedia(){return {getTracks:()=>[{stop(){stopped++;}}]};}}});
+  const popup={closed:false,postMessage:data=>received.push(data)};let opened;
+  const originalOpen=window.open;
+  window.open=url=>{opened=new URL(url);return popup;};window.AudioContext=Audio;
+  globalThis.location=window.location;
   const model=createDrums(),cleanup=model.connect();
   try{
     const pending=model.engine.toggle();assert.equal(model.engine.starting,true);
-    model.record(2);await Promise.resolve();assert.equal(model.recordState,'recording');assert.equal(model.requestedSlot,2);
+    model.record(2);assert.equal(opened.searchParams.get('mode'),'recorder');assert.equal(opened.searchParams.get('target'),'drums');
     resume();await pending;assert.equal(model.engine.running,false);
-    model.record(2);await recorder.done;
-    assert.equal(model.recordState,'idle');assert.equal(stopped,1);assert.ok(model.samples[2]);assert.equal(model.samples[0],null);assert.equal(model.samples[1],null);assert.equal(model.samples[3],null);
-    assert.match(model.status,/Семпл 3 готов/);
-    assert.equal(model.editingSlot,2);
+    const session=opened.searchParams.get('session');
+    const deliver=(source,origin)=>window.dispatchEvent(new window.MessageEvent('message',{source,origin,data:{type:'drum-sample',session,blob:new Blob(['recording'])}}));
+    deliver({},location.origin);deliver(popup,'https://wrong.example');await new Promise(r=>setImmediate(r));assert.equal(model.samples[2],null);
+    deliver(popup,location.origin);await new Promise(r=>setImmediate(r));
+    assert.ok(model.samples[2]);assert.equal(model.samples[0],null);assert.equal(model.samples[3],null);
+    assert.equal(received[0].type,'sample-received');assert.equal(model.editingSlot,2);
     model.setSampleSettings(2,{gain:3,start:.05});
-    assert.deepEqual(model.sampleSettings[2],{gain:3,start:.05});
-    assert.deepEqual(createDrums().sampleSettings[2],{gain:3,start:.05});
-    assert.deepEqual(model.sampleSettings[0],{gain:1,start:0});
-    model.openSample(null);assert.equal(model.editingSlot,null);
-    model.openSample(0);assert.equal(model.editingSlot,null);
-    model.openSample(2);assert.equal(model.editingSlot,2);
-    model.record(2);await Promise.resolve();model.record(2);await recorder.done;
-    assert.deepEqual(model.sampleSettings[2],{gain:1,start:0});
-  }finally{cleanup();delete window.AudioContext;globalThis.MediaRecorder=originalRecorder;delete navigator.mediaDevices;}
+    assert.deepEqual(createDrums().sampleSettings[2],{gain:3,start:.05});assert.deepEqual(model.sampleSettings[0],{gain:1,start:0});
+    model.openSample(null);model.openSample(0);assert.equal(model.editingSlot,null);
+    model.record(2);deliver(popup,location.origin);await new Promise(r=>setImmediate(r));assert.deepEqual(model.sampleSettings[2],{gain:1,start:0});
+    window.open=()=>null;model.record(1);assert.equal(model.recordWindow,true);assert.match(model.status,/Разреши всплывающее/);
+  }finally{cleanup();window.open=originalOpen;delete window.AudioContext;delete globalThis.location;}
 });

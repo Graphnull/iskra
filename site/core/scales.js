@@ -1,4 +1,4 @@
-import { at } from "./guards.js?v=ee6d7c71cf26";
+import { at } from "./guards.js?v=06d05f371f9a";
 export const SCALES = {
     major: { name: "Мажор", notes: [0, 2, 4, 5, 7, 9, 11] },
     minor: { name: "Минор", notes: [0, 2, 3, 5, 7, 8, 10] },
