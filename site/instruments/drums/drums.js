@@ -1,14 +1,14 @@
-import { readStored, writeStored } from "../../core/storage.js?v=c53522026b7d";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=c53522026b7d";
-import { audioContext } from "../../core/dom.js?v=c53522026b7d";
-import { at, isRecord } from "../../core/guards.js?v=c53522026b7d";
-import { createObservable } from "../../core/observable.js?v=c53522026b7d";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=c53522026b7d";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=c53522026b7d";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=c53522026b7d";
-import { sampleStore } from "../../core/sample-store.js?v=c53522026b7d";
-import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=c53522026b7d";
-import { createSections, sectionPosition } from "../../core/sections.js?v=c53522026b7d";
+import { readStored, writeStored } from "../../core/storage.js?v=39012b742fa1";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=39012b742fa1";
+import { audioContext } from "../../core/dom.js?v=39012b742fa1";
+import { at, isRecord } from "../../core/guards.js?v=39012b742fa1";
+import { createObservable } from "../../core/observable.js?v=39012b742fa1";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=39012b742fa1";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=39012b742fa1";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=39012b742fa1";
+import { sampleStore } from "../../core/sample-store.js?v=39012b742fa1";
+import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=39012b742fa1";
+import { createSections, sectionPosition } from "../../core/sections.js?v=39012b742fa1";
 export const TRACKS = [
     "Бочка",
     "Снейр",
@@ -146,7 +146,10 @@ export function createDrums() {
                     hit(row, time);
         },
         onVisual(step) {
-            playing = sectionPosition(step);
+            const position = sectionPosition(step);
+            if (playing?.section !== position.section)
+                sequence.state.selected = position.section;
+            playing = position;
             observable.notify();
         },
         onReset() {

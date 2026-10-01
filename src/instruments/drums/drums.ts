@@ -206,7 +206,10 @@ export function createDrums() {
           hit(row, time);
     },
     onVisual(step) {
-      playing = sectionPosition(step);
+      const position = sectionPosition(step);
+      if (playing?.section !== position.section)
+        sequence.state.selected = position.section;
+      playing = position;
       observable.notify();
     },
     onReset() {

@@ -180,6 +180,11 @@
   box-shadow: 0 0 5px #dc827a66;
 }
 
+.section-controls button.is-playing {
+  border-color: #dc827a;
+  box-shadow: inset 0 -3px #dc827a;
+}
+
 .section-controls button:focus-visible {
   outline: 2px solid #dc827a;
   outline-offset: 2px;
@@ -198,6 +203,11 @@
 [data-theme="light"] .section-controls button[aria-pressed="true"] {
   background: #dedbd2;
   border-color: #77746b;
+}
+
+[data-theme="light"] .section-controls button.is-playing {
+  border-color: #b64d45;
+  box-shadow: inset 0 -3px #b64d45;
 }
 
 [data-theme="light"] .eyebrow,

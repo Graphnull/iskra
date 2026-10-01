@@ -1,5 +1,5 @@
-import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=c53522026b7d";
-import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=c53522026b7d";
+import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=39012b742fa1";
+import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=39012b742fa1";
 export const SYNTH_STEPS = SECTION_STEPS;
 export const SYNTH_ROWS = 16;
 export const synthPosition = sectionPosition;

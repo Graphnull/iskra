@@ -1,11 +1,11 @@
-import { audioContext } from "../../core/dom.js?v=c53522026b7d";
-import { at, isRecord, isInteger } from "../../core/guards.js?v=c53522026b7d";
-import { createObservable } from "../../core/observable.js?v=c53522026b7d";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=c53522026b7d";
-import { readStored, writeStored } from "../../core/storage.js?v=c53522026b7d";
-import { createSections, sectionPosition } from "../../core/sections.js?v=c53522026b7d";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=c53522026b7d";
-import { isScaleId, pitchForRow, noteLabel } from "../../core/scales.js?v=c53522026b7d";
+import { audioContext } from "../../core/dom.js?v=39012b742fa1";
+import { at, isRecord, isInteger } from "../../core/guards.js?v=39012b742fa1";
+import { createObservable } from "../../core/observable.js?v=39012b742fa1";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=39012b742fa1";
+import { readStored, writeStored } from "../../core/storage.js?v=39012b742fa1";
+import { createSections, sectionPosition } from "../../core/sections.js?v=39012b742fa1";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=39012b742fa1";
+import { isScaleId, pitchForRow, noteLabel } from "../../core/scales.js?v=39012b742fa1";
 const validInstrument = (value) => typeof value === "string" && ["bell", "keys", "pluck", "pad"].includes(value);
 const validHarmony = (value) => isRecord(value) &&
     isScaleId(value.scale) &&
@@ -101,7 +101,10 @@ export function createTenorion() {
                 soundMidi(rowMidi(row, harmony), time, 0.22 / Math.max(1, rows.length));
         },
         onVisual(step) {
-            playing = sectionPosition(step);
+            const position = sectionPosition(step);
+            if (playing?.section !== position.section)
+                sequence.state.selected = position.section;
+            playing = position;
             observable.notify();
         },
         onReset() {

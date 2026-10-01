@@ -114,7 +114,10 @@ export function createSynth() {
         sound(pitch(note.row), time, (note.remaining * 15) / engine.bpm);
     },
     onVisual(step) {
-      playing = synthPosition(step);
+      const position = synthPosition(step);
+      if (playing?.section !== position.section)
+        state.selected = position.section;
+      playing = position;
       observable.notify();
     },
     onReset: stopSequenced,

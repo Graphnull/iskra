@@ -134,7 +134,10 @@ export function createTenorion() {
         soundMidi(rowMidi(row, harmony), time, 0.22 / Math.max(1, rows.length));
     },
     onVisual(step) {
-      playing = sectionPosition(step);
+      const position = sectionPosition(step);
+      if (playing?.section !== position.section)
+        sequence.state.selected = position.section;
+      playing = position;
       observable.notify();
     },
     onReset() {

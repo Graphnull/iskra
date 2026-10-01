@@ -1,12 +1,12 @@
-import { audioContext as createAudioContext } from "../../core/dom.js?v=c53522026b7d";
-import { at } from "../../core/guards.js?v=c53522026b7d";
-import { createObservable } from "../../core/observable.js?v=c53522026b7d";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=c53522026b7d";
-import { isSynthSound, isFilterType, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=c53522026b7d";
-import { readStored, writeStored } from "../../core/storage.js?v=c53522026b7d";
-import { synthVoice, releaseVoice, updateSynthVoice, updateVoiceFilter, } from "./synth-audio.js?v=c53522026b7d";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=c53522026b7d";
-import { noteLabel } from "../../core/scales.js?v=c53522026b7d";
+import { audioContext as createAudioContext } from "../../core/dom.js?v=39012b742fa1";
+import { at } from "../../core/guards.js?v=39012b742fa1";
+import { createObservable } from "../../core/observable.js?v=39012b742fa1";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=39012b742fa1";
+import { isSynthSound, isFilterType, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=39012b742fa1";
+import { readStored, writeStored } from "../../core/storage.js?v=39012b742fa1";
+import { synthVoice, releaseVoice, updateSynthVoice, updateVoiceFilter, } from "./synth-audio.js?v=39012b742fa1";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=39012b742fa1";
+import { noteLabel } from "../../core/scales.js?v=39012b742fa1";
 export function createSynth() {
     const observable = createObservable(), stateKey = widgetStorageKey("synth-sequence-v1");
     const state = restoreSynth(readStored(stateKey, null, {
@@ -79,7 +79,10 @@ export function createSynth() {
                 sound(pitch(note.row), time, (note.remaining * 15) / engine.bpm);
         },
         onVisual(step) {
-            playing = synthPosition(step);
+            const position = synthPosition(step);
+            if (playing?.section !== position.section)
+                state.selected = position.section;
+            playing = position;
             observable.notify();
         },
         onReset: stopSequenced,

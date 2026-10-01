@@ -1,15 +1,15 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
-import { createSynth } from "./synth.js?v=c53522026b7d";
-import { SynthPanel } from "./synth-panel.js?v=c53522026b7d";
-import { SYNTH_ROWS, noteAt } from "./synth-sequence.js?v=c53522026b7d";
-import { noteLabel } from "../../core/scales.js?v=c53522026b7d";
-import { at } from "../../core/guards.js?v=c53522026b7d";
-import { buildKeyMap } from "../../core/keyboard-map.js?v=c53522026b7d";
-import { useController } from "../../ui/hooks.js?v=c53522026b7d";
-import { useKeyboard } from "../../ui/keyboard.js?v=c53522026b7d";
-import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=c53522026b7d";
-import { NoteGrid } from "../../ui/grid.js?v=c53522026b7d";
+import { createSynth } from "./synth.js?v=39012b742fa1";
+import { SynthPanel } from "./synth-panel.js?v=39012b742fa1";
+import { SYNTH_ROWS, noteAt } from "./synth-sequence.js?v=39012b742fa1";
+import { noteLabel } from "../../core/scales.js?v=39012b742fa1";
+import { at } from "../../core/guards.js?v=39012b742fa1";
+import { buildKeyMap } from "../../core/keyboard-map.js?v=39012b742fa1";
+import { useController } from "../../ui/hooks.js?v=39012b742fa1";
+import { useKeyboard } from "../../ui/keyboard.js?v=39012b742fa1";
+import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=39012b742fa1";
+import { NoteGrid } from "../../ui/grid.js?v=39012b742fa1";
 const KEYS = buildKeyMap();
 export function Synth() {
     const model = useController(createSynth), keyboard = useKeyboard(model), state = model.state;
