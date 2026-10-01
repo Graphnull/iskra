@@ -60,3 +60,9 @@ test('filter controls enable an audible range, retain depth in manual mode and p
   model.setFilterType('notch');model.setParameter('cutoff',80);model.setFilterControl('manual');
   const restored=createSynth();assert.equal(restored.state.filterType,'notch');assert.equal(restored.state.filterControl,'manual');assert.equal(restored.state.cutoff,80);assert.equal(restored.state.filterAmount,.8);
 });
+
+test('single click creates one step even when an old default length is saved',()=>{
+  clear();const model=createSynth();model.setLength(8);const restored=createSynth();
+  restored.edit(1,3);assert.deepEqual(restored.state.sections[0],[{row:1,start:3,length:1}]);
+  restored.edit(2,4,6);assert.equal(restored.state.sections[0][1].length,6);
+});

@@ -1,12 +1,12 @@
-import { audioContext as createAudioContext } from "../../core/dom.js?v=39012b742fa1";
-import { at } from "../../core/guards.js?v=39012b742fa1";
-import { createObservable } from "../../core/observable.js?v=39012b742fa1";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=39012b742fa1";
-import { isSynthSound, isFilterType, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=39012b742fa1";
-import { readStored, writeStored } from "../../core/storage.js?v=39012b742fa1";
-import { synthVoice, releaseVoice, updateSynthVoice, updateVoiceFilter, } from "./synth-audio.js?v=39012b742fa1";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=39012b742fa1";
-import { noteLabel } from "../../core/scales.js?v=39012b742fa1";
+import { audioContext as createAudioContext } from "../../core/dom.js?v=b2a541907b97";
+import { at } from "../../core/guards.js?v=b2a541907b97";
+import { createObservable } from "../../core/observable.js?v=b2a541907b97";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=b2a541907b97";
+import { isSynthSound, isFilterType, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=b2a541907b97";
+import { readStored, writeStored } from "../../core/storage.js?v=b2a541907b97";
+import { synthVoice, releaseVoice, updateSynthVoice, updateVoiceFilter, } from "./synth-audio.js?v=b2a541907b97";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=b2a541907b97";
+import { noteLabel } from "../../core/scales.js?v=b2a541907b97";
 export function createSynth() {
     const observable = createObservable(), stateKey = widgetStorageKey("synth-sequence-v1");
     const state = restoreSynth(readStored(stateKey, null, {
@@ -123,7 +123,7 @@ export function createSynth() {
             state.sections[state.selected] =
                 length === undefined && existing
                     ? notes.filter((note) => note !== existing)
-                    : putNote(notes, row, column, length ?? state.length);
+                    : putNote(notes, row, column, length ?? 1);
             save();
             engine.reset();
         },

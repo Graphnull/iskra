@@ -284,3 +284,23 @@
   background: #fff0c5;
   border-color: #a85f57;
 }
+
+.synth-grid .row-note.is-held {
+  color: #dc827a;
+  font-weight: 800;
+}
+
+.synth-cell.is-held {
+  box-shadow: inset 0 0 0 1px #dc827a;
+}
+
+.synth-cell.is-preview,
+[data-theme="light"] .synth-cell.is-preview {
+  background: #dc827a;
+  border-color: #f3b5ae;
+  box-shadow: inset 0 0 0 1px #f3b5ae;
+}
+
+[data-theme="light"] .synth-grid .row-note.is-held {
+  color: #a63830;
+}

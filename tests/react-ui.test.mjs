@@ -45,19 +45,23 @@ test('section updates preserve focused grid cells and drag edits retain their le
   const root=createRoot(rootElement),edits=[],selects=[];
   function View({section,playing}){return createElement('div',null,
     createElement(SectionSelector,{selected:section,playing,onSelect:value=>selects.push(value)}),
-    createElement(NoteGrid,{kind:'synth',labels:['C4','D4'],selected:section,playing,note:()=>({enabled:false}),onEdit:(...values)=>edits.push(values)}));}
+    createElement(NoteGrid,{kind:'synth',activeLabels:section===0?['D4']:[],labels:['C4','D4'],selected:section,playing,note:()=>({enabled:false}),onEdit:(...values)=>edits.push(values)}));}
   await act(async()=>root.render(createElement(View,{section:0,playing:null})));
+  assert.equal(document.querySelectorAll('.synth-cell.is-held').length,16);assert.equal(document.querySelector('.row-note.is-held').textContent,'D4');
   const first=document.querySelector('.synth-cell'),last=document.querySelector('.synth-cell[data-column="3"]');
   first.focus();await act(async()=>root.render(createElement(View,{section:0,playing:{section:1,column:2}})));
   assert.equal(document.activeElement,first);assert.equal(document.querySelector('.synth-cell'),first);
   await act(async()=>document.querySelector('[data-section="2"]').click());assert.deepEqual(selects,[2]);
   const pointer=(type,target,properties={})=>target.dispatchEvent(Object.assign(new Event(type,{bubbles:true,cancelable:true}),{pointerId:1,button:0,...properties}));
   await act(async()=>pointer('pointerdown',first));
+  assert.equal(document.querySelectorAll('.is-preview').length,1);
   document.elementFromPoint=()=>last;
   await act(async()=>pointer('pointermove',first,{clientX:1,clientY:1}));
-  await act(async()=>pointer('pointerup',first));assert.deepEqual(edits,[[0,0,4]]);
+  assert.equal(document.querySelectorAll('.is-preview').length,4);assert.equal(edits.length,0);
+  await act(async()=>pointer('pointerup',first));assert.deepEqual(edits,[[0,0,4]]);assert.equal(document.querySelectorAll('.is-preview').length,0);
   await act(async()=>pointer('pointerdown',first));
   await act(async()=>root.render(createElement(View,{section:1,playing:null})));
+  assert.equal(document.querySelectorAll('.is-preview').length,0);assert.equal(document.querySelectorAll('.is-held').length,0);
   await act(async()=>pointer('pointerup',first));assert.equal(edits.length,1);
   await act(async()=>root.unmount());
 });

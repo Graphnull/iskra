@@ -157,7 +157,7 @@ export function createSynth() {
       state.sections[state.selected] =
         length === undefined && existing
           ? notes.filter((note) => note !== existing)
-          : putNote(notes, row, column, length ?? state.length);
+          : putNote(notes, row, column, length ?? 1);
       save();
       engine.reset();
     },

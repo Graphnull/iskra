@@ -40,20 +40,6 @@ export function Synth() {
         </select>
       </PlaybackControls>
       <div className="synth-tools">
-        <label>
-          Длина{" "}
-          <select
-            aria-label="Длина ноты в шагах"
-            value={state.length}
-            onChange={(event) => model.setLength(Number(event.target.value))}
-          >
-            {[1, 2, 4, 8, 16].map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
         <label className="wave-control">
           Волна{" "}
           <select
@@ -96,6 +82,9 @@ export function Synth() {
       />
       <NoteGrid
         kind="synth"
+        activeLabels={KEYS.filter((key) => keyboard.active.has(key.code)).map(
+          model.labelFor,
+        )}
         selected={state.selected}
         playing={model.playing}
         hidden={panel}

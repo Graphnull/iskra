@@ -16,6 +16,7 @@ interface GridProps {
   note(row: number, column: number): GridNote;
   onEdit(row: number, column: number, length?: number): void;
   hidden?: boolean;
+  activeLabels?: readonly string[];
 }
 const OFFSETS: Partial<Record<string, readonly [number, number]>> = {
   ArrowLeft: [0, -1],
@@ -32,8 +33,15 @@ export function NoteGrid({
   note,
   onEdit,
   hidden = false,
+  activeLabels = [],
 }: GridProps) {
   const [focused, setFocused] = useState(0);
+  const [preview, setPreview] = useState<{
+    section: number;
+    row: number;
+    start: number;
+    end: number;
+  } | null>(null);
   const cells = useRef(new Map<number, HTMLButtonElement>());
   const drag = useRef<{
     id: number;
@@ -81,6 +89,7 @@ export function NoteGrid({
           start: Number(cell.dataset.column),
           end: Number(cell.dataset.column),
         };
+        setPreview({ section: selected, ...drag.current });
       }}
       onPointerMove={(event) => {
         const gesture = drag.current;
@@ -92,13 +101,16 @@ export function NoteGrid({
           cell &&
           event.currentTarget.contains(cell) &&
           Number(cell.dataset.row) === gesture.row
-        )
+        ) {
           gesture.end = Number(cell.dataset.column);
+          setPreview({ section: selected, ...gesture });
+        }
       }}
       onPointerUp={(event) => {
         const gesture = drag.current;
         if (!gesture || gesture.id !== event.pointerId) return;
         drag.current = null;
+        setPreview(null);
         if (gesture.start === gesture.end) onEdit(gesture.row, gesture.start);
         else
           onEdit(
@@ -109,9 +121,11 @@ export function NoteGrid({
       }}
       onPointerCancel={() => {
         drag.current = null;
+        setPreview(null);
       }}
       onLostPointerCapture={() => {
         drag.current = null;
+        setPreview(null);
       }}
     >
       {kind === "drum" && (
@@ -129,7 +143,10 @@ export function NoteGrid({
           {rowContent ? (
             rowContent(row)
           ) : (
-            <span className="row-note" aria-hidden="true">
+            <span
+              className={`row-note${activeLabels.includes(label) ? " is-held" : ""}`}
+              aria-hidden="true"
+            >
               {label}
             </span>
           )}
@@ -147,7 +164,7 @@ export function NoteGrid({
                 data-row={row}
                 data-column={column}
                 tabIndex={focused === index ? 0 : -1}
-                className={`${kind}-cell${kind === "drum" && Math.floor(column / 4) % 2 ? " alternate-beat" : ""}${value.enabled ? " is-on" : ""}${value.start ? " note-start" : ""}${value.end ? " note-end" : ""}${playing?.section === selected && playing.column === column ? " is-step" : ""}`}
+                className={`${kind}-cell${kind === "drum" && Math.floor(column / 4) % 2 ? " alternate-beat" : ""}${activeLabels.includes(label) ? " is-held" : ""}${drag.current && preview?.section === selected && preview.row === row && column >= Math.min(preview.start, preview.end) && column <= Math.max(preview.start, preview.end) ? " is-preview" : ""}${value.enabled ? " is-on" : ""}${value.start ? " note-start" : ""}${value.end ? " note-end" : ""}${playing?.section === selected && playing.column === column ? " is-step" : ""}`}
                 aria-label={
                   kind === "light"
                     ? `Шаг ${column + 1}, нота ${label}`
