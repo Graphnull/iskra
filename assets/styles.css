@@ -14,6 +14,7 @@ body {
   place-items: center;
   background: radial-gradient(circle at 50% -20%, #30302e 0, #171717 70%);
 }
+#root { width: 100%; min-width: 0; display: grid; place-items: center; }
 .piano {
   width: min(100%, 540px);
   padding: clamp(13px, 4vw, 24px);
@@ -177,6 +178,7 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 .live-focus { display: flex; align-items: center; gap: 5px; }
 .live-focus.is-focused .focus-dot { background: #a8efae; box-shadow: 0 0 6px #a8efae66; }
 .live-keys { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+.keyboard-row { display: flex; flex: 1; min-height: 0; }
 .live-keys .keyboard { height: auto; flex: 1; min-height: 0; }
 .live-keys .key.black { display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 3px; }
 .live-keys .key.black .note { display: none; }

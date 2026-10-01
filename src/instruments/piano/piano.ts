@@ -1,134 +1,92 @@
-import { byId, audioContext as createAudioContext } from '../../core/dom.js';
-import { required } from '../../core/guards.js';
-import type { PianoKey } from '../../core/keyboard-map.js';
-import { buildKeyMap, ROWS } from "../../core/keyboard-map.js";
-import { bindKeyInput } from "../../core/live-keyboard.js";
-export { buildKeyMap };
-
-export interface PianoVoice { release: GainNode; oscillators: OscillatorNode[]; code: string }
+import { audioContext as createAudioContext } from "../../core/dom.js";
+import { createObservable } from "../../core/observable.js";
+import type { PianoKey } from "../../core/keyboard-map.js";
+export { buildKeyMap } from "../../core/keyboard-map.js";
+export interface PianoVoice {
+  release: GainNode;
+  oscillators: OscillatorNode[];
+  code: string;
+}
 export function releaseVoice(voice: PianoVoice, now: number): void {
   voice.release.gain.setValueAtTime(1, now);
   voice.release.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
   for (const oscillator of voice.oscillators) oscillator.stop(now + 0.77);
 }
-
-const keys = buildKeyMap();
-if (typeof document !== "undefined") {
-  const byCode = new Map(keys.map(key => [key.code, key]));
-  const buttons = new Map<string, HTMLButtonElement>();
-  const voices = new Map<string, PianoVoice>();
-  const focusControl = byId("focus-control", HTMLButtonElement);
-  const focusLabel = byId("focus-label", HTMLSpanElement);
-  let audioContext: AudioContext;
-
-  function syncFocusStatus() {
-    const focused = document.hasFocus() && !document.hidden;
-    focusControl.classList.toggle("is-focused", focused);
-    focusLabel.textContent = focused ? "Клавиатура активна" : "Нажми, чтобы включить клавиатуру";
-    focusControl.setAttribute("aria-label", focused ? "Клавиатура активна" : "Нажмите, чтобы активировать клавиатуру");
-  }
-
-  function renderKeys() {
-    for (const row of ROWS) {
-      const container = byId(row.id, HTMLDivElement);
-      container.style.setProperty("--white-count", String(row.white.length));
-      for (const key of keys.filter(item => item.row === row.id)) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = `key ${key.black ? "black" : "white"}`;
-        button.setAttribute("aria-label", `${key.note}${key.octave}, клавиша ${key.label}`);
-        button.dataset.code = key.code;
-        if (key.black) {
-          button.style.setProperty("--position", String(key.position));
-          button.textContent = key.label;
-        } else {
-          button.innerHTML = `<span class="letter">${key.label}</span><span class="note">${key.note}</span>`;
-        }
-        container.append(button);
-        buttons.set(key.code, button);
-      }
-    }
-  }
-
-  function startVoice(key: PianoKey, source: string): void {
-    if (voices.has(source)) return;
-    audioContext ??= createAudioContext();
-    if (audioContext.state === "suspended") audioContext.resume();
-    const fundamental = audioContext.createOscillator();
-    const overtone = audioContext.createOscillator();
-    const overtoneLevel = audioContext.createGain();
-    const tone = audioContext.createGain();
-    const release = audioContext.createGain();
-    fundamental.type = "triangle";
-    fundamental.frequency.value = key.frequency;
-    overtone.type = "sine";
-    overtone.frequency.value = key.frequency * 2;
-    overtoneLevel.gain.value = 0.16;
-    const now = audioContext.currentTime;
-    tone.gain.setValueAtTime(0.0001, now);
-    tone.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
-    tone.gain.exponentialRampToValueAtTime(0.07, now + 0.35);
-    tone.gain.exponentialRampToValueAtTime(0.035, now + 2);
-    release.gain.value = 1;
-    fundamental.connect(tone);
-    overtone.connect(overtoneLevel).connect(tone);
-    tone.connect(release).connect(audioContext.destination);
-    fundamental.start();
-    overtone.start();
-    voices.set(source, { oscillators: [fundamental, overtone], release, code: key.code });
-    buttons.get(key.code)?.classList.add("is-active");
-  }
-
-  function stopVoice(source: string | undefined): void {
-    if (source === undefined) return;
+export function createPiano() {
+  const observable = createObservable(),
+    voices = new Map<string, PianoVoice>();
+  let context: AudioContext | null = null,
+    disposed = false;
+  let lifecycle = 0;
+  function release(source: string | undefined) {
+    if (source === undefined || !context) return;
     const voice = voices.get(source);
     if (!voice) return;
     voices.delete(source);
-    releaseVoice(voice, audioContext.currentTime);
-    if (![...voices.values()].some(item => item.code === voice.code)) buttons.get(voice.code)?.classList.remove("is-active");
+    releaseVoice(voice, context.currentTime);
   }
-
-  function stopAll() {
-    for (const source of voices.keys()) stopVoice(source);
-    for (const button of buttons.values()) button.classList.remove("is-active");
-  }
-
-  renderKeys();
-  syncFocusStatus();
-  focusControl.addEventListener("click", () => {
-    window.focus();
-    focusControl.focus();
-    syncFocusStatus();
-  });
-  document.addEventListener("focusin", syncFocusStatus);
-  window.addEventListener("focus", syncFocusStatus);
-  bindKeyInput({
-    onNoteOn(key, source) { startVoice(key, source); return source; },
-    onNoteOff(source) { stopVoice(source); },
-  });
-  window.addEventListener("blur", () => { stopAll(); syncFocusStatus(); });
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopAll();
-    syncFocusStatus();
-  });
-  for (const [code, button] of buttons) {
-    button.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      window.focus();
-      syncFocusStatus();
-      button.setPointerCapture(event.pointerId);
-      startVoice(required(byCode.get(code), 'piano key'), `pointer:${event.pointerId}`);
-    });
-    button.addEventListener("pointerup", event => stopVoice(`pointer:${event.pointerId}`));
-    button.addEventListener("pointercancel", event => stopVoice(`pointer:${event.pointerId}`));
-    button.addEventListener("lostpointercapture", event => stopVoice(`pointer:${event.pointerId}`));
-    button.addEventListener("keydown", event => {
-      if ((event.code !== "Enter" && event.code !== "Space") || event.repeat) return;
-      event.preventDefault();
-      startVoice(required(byCode.get(code), 'piano key'), `button:${code}`);
-    });
-    button.addEventListener("keyup", event => {
-      if (event.code === "Enter" || event.code === "Space") stopVoice(`button:${code}`);
-    });
-  }
+  return {
+    ...observable,
+    connect() {
+      disposed = false;
+      lifecycle++;
+      return () => {
+        disposed = true;
+        lifecycle++;
+        if (context) {
+          for (const source of voices.keys()) release(source);
+          if (context.state !== "closed") void context.close();
+        }
+      };
+    },
+    async onNoteOn(key: PianoKey, source: string) {
+      if (disposed) return;
+      if (!context || context.state === "closed")
+        context = createAudioContext();
+      const audio = context,
+        activeLifecycle = lifecycle;
+      await audio.resume();
+      if (disposed || activeLifecycle !== lifecycle) return;
+      const fundamental = audio.createOscillator(),
+        overtone = audio.createOscillator(),
+        overtoneLevel = audio.createGain(),
+        tone = audio.createGain(),
+        release = audio.createGain();
+      fundamental.type = "triangle";
+      fundamental.frequency.value = key.frequency;
+      overtone.type = "sine";
+      overtone.frequency.value = key.frequency * 2;
+      overtoneLevel.gain.value = 0.16;
+      const now = audio.currentTime;
+      tone.gain.setValueAtTime(0.0001, now);
+      tone.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
+      tone.gain.exponentialRampToValueAtTime(0.07, now + 0.35);
+      tone.gain.exponentialRampToValueAtTime(0.035, now + 2);
+      release.gain.value = 1;
+      fundamental.connect(tone);
+      overtone.connect(overtoneLevel).connect(tone);
+      tone.connect(release).connect(audio.destination);
+      fundamental.start();
+      overtone.start();
+      voices.set(source, {
+        release,
+        oscillators: [fundamental, overtone],
+        code: key.code,
+      });
+      let remaining = 2;
+      const ended = () => {
+        if (--remaining === 0) {
+          fundamental.disconnect();
+          overtone.disconnect();
+          overtoneLevel.disconnect();
+          tone.disconnect();
+          release.disconnect();
+        }
+      };
+      fundamental.onended = ended;
+      overtone.onended = ended;
+      return source;
+    },
+    onNoteOff: release,
+  };
 }

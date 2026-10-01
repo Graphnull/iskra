@@ -29,9 +29,9 @@ export function storageKeyFor(base, view, referrer, fallback) {
         return base; // Preserve existing standalone saves.
     if (!path)
         return `${base}:unidentified:${fallback}`;
-    return `${base}:frame:${encodeURIComponent(referrer || 'unknown-parent')}:${path.join('.')}`;
+    return `${base}:frame:${encodeURIComponent(referrer || "unknown-parent")}:${path.join(".")}`;
 }
-const fallback = typeof crypto !== 'undefined' ? crypto.randomUUID() : 'unavailable';
+const fallback = typeof crypto !== "undefined" ? crypto.randomUUID() : "unavailable";
 export function widgetStorageKey(base) {
     return storageKeyFor(base, window, document.referrer, fallback);
 }

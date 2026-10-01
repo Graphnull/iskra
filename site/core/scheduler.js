@@ -1,5 +1,5 @@
-import { boundaryAfter, wallTime } from './transport.js?v=2ce4b858cdb4';
-export function createScheduler({ context, transport, onStep, onVisual, onError = () => { }, now = wallTime, timers = globalThis, lookahead = 200, interval = 25 }) {
+import { boundaryAfter, wallTime } from "./transport.js?v=ec8e4b19492c";
+export function createScheduler({ context, transport, onStep, onVisual, onError = () => { }, now = wallTime, timers = globalThis, lookahead = 200, interval = 25, }) {
     let running = false, cursor = 0, first = true, generation = 0;
     let timer;
     const visuals = new Set();
@@ -23,7 +23,11 @@ export function createScheduler({ context, transport, onStep, onVisual, onError 
             const boundary = boundaryAfter(transport(), cursor);
             if (boundary.time > timestamp + lookahead)
                 break;
-            onStep({ ...boundary, time: context().currentTime + (boundary.time - timestamp) / 1000, first });
+            onStep({
+                ...boundary,
+                time: context().currentTime + (boundary.time - timestamp) / 1000,
+                first,
+            });
             if (!running)
                 return;
             first = false;
@@ -43,7 +47,9 @@ export function createScheduler({ context, transport, onStep, onVisual, onError 
         clearVisuals();
     }
     return {
-        get running() { return running; },
+        get running() {
+            return running;
+        },
         start() {
             if (running)
                 return;
@@ -68,10 +74,12 @@ export function createScheduler({ context, transport, onStep, onVisual, onError 
             }
         },
         stop,
-        reset() { if (running) {
-            clearVisuals();
-            cursor = now() + 35;
-            first = true;
-        } },
+        reset() {
+            if (running) {
+                clearVisuals();
+                cursor = now() + 35;
+                first = true;
+            }
+        },
     };
 }

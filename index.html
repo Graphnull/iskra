@@ -5,31 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#191918" />
     <title>Пианино на клавиатуре</title>
-    <link rel="stylesheet" href="./assets/styles.css?v=2ce4b858cdb4" />
-    <script type="module" src="./site/app.js?v=2ce4b858cdb4"></script>
+    <link rel="stylesheet" href="./assets/styles.css?v=ec8e4b19492c" />
+    <script type="module" src="./site/app.js?v=ec8e4b19492c"></script>
   </head>
   <body>
-    <main class="piano" aria-labelledby="title">
-      <header class="heading">
-        <div>
-          <p class="eyebrow">КАРМАННОЕ ПИАНИНО</p>
-          <h1 id="title">Играй с клавиатуры</h1>
-        </div>
-        <span class="sound-mark" aria-label="Звук включён">♫</span>
-      </header>
-      <button class="focus-control" id="focus-control" type="button">
-        <span class="focus-dot" aria-hidden="true"></span>
-        <span id="focus-label" aria-live="polite">Нажми, чтобы включить клавиатуру</span>
-      </button>
-      <section class="octave" aria-label="Верхний ряд: Q W E R T Y U I O P левая скобка правая скобка, чёрные 2 3 5 6 7 9 0 равно">
-        <div class="octave-heading"><span>ВЫШЕ</span><span>Q → ]</span></div>
-        <div class="keyboard" id="upper-keyboard"></div>
-      </section>
-      <section class="octave" aria-label="Нижний ряд: Z X C V B N M запятая точка слэш, чёрные S D G H J L точка с запятой">
-        <div class="octave-heading"><span>НИЖЕ</span><span>Z → /</span></div>
-        <div class="keyboard" id="lower-keyboard"></div>
-      </section>
-      <p class="footer">Раскладка не влияет на ноты <span aria-hidden="true">✦</span> Можно играть аккордами</p>
-    </main>
+    <div id="root"></div>
+    <noscript>Включи JavaScript, чтобы играть.</noscript>
   </body>
 </html>

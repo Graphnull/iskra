@@ -1,21 +1,21 @@
-import { drumForMidi } from './drum-notes.js?v=2ce4b858cdb4';
-import { sampleBounds } from '../../core/microphone.js?v=2ce4b858cdb4';
+import { drumForMidi } from "./drum-notes.js?v=ec8e4b19492c";
+import { sampleBounds } from "../../core/microphone.js?v=ec8e4b19492c";
 export const SAMPLE_BINDINGS = [
-    { midi: 72, note: 'C5', key: 'Q' },
-    { midi: 74, note: 'D5', key: 'W' },
-    { midi: 76, note: 'E5', key: 'E' },
-    { midi: 77, note: 'F5', key: 'R' },
+    { midi: 72, note: "C5", key: "Q" },
+    { midi: 74, note: "D5", key: "W" },
+    { midi: 76, note: "E5", key: "E" },
+    { midi: 77, note: "F5", key: "R" },
 ];
 export function drumTrackForMidi(midi) {
-    const slot = SAMPLE_BINDINGS.findIndex(binding => binding.midi === midi);
+    const slot = SAMPLE_BINDINGS.findIndex((binding) => binding.midi === midi);
     return slot < 0 ? drumForMidi(midi) : 8 + slot;
 }
 export async function decodeDrumSample(context, blob) {
     if (blob.size > 5 * 1024 * 1024)
-        throw new Error('Запись слишком большая. Запиши до 10 секунд.');
+        throw new Error("Запись слишком большая. Запиши до 10 секунд.");
     const decoded = await context.decodeAudioData(await blob.arrayBuffer());
     if (decoded.duration > 12)
-        throw new Error('Запись слишком длинная. Запиши до 10 секунд.');
+        throw new Error("Запись слишком длинная. Запиши до 10 секунд.");
     const channels = Array.from({ length: decoded.numberOfChannels }, (_, index) => decoded.getChannelData(index));
     const { start, end } = sampleBounds(channels, decoded.sampleRate);
     const buffer = context.createBuffer(decoded.numberOfChannels, end - start, decoded.sampleRate);

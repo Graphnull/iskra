@@ -1,232 +1,229 @@
-import { element, byId, audioContext } from '../../core/dom.js';
-import { at, isRecord, isInteger } from '../../core/guards.js';
-import type { Harmony } from '../../core/scales.js';
-type Instrument = 'bell' | 'keys' | 'pluck' | 'pad';
-const validInstrument = (value: unknown): value is Instrument => typeof value === 'string' && ['bell','keys','pluck','pad'].includes(value);
-const validHarmony = (value: unknown): value is Harmony => isRecord(value) && isScaleId(value.scale) && isInteger(value.transpose) && Math.abs(value.transpose) <= 12 && isInteger(value.octave) && Math.abs(value.octave) <= 2;
-import { bindPlayback } from '../../core/playback-control.js';
-import { readStored, writeStored } from '../../core/storage.js';
-import { createScheduler } from '../../core/scheduler.js';
-import { createSections, mountSections, sectionPosition } from "../../core/sections.js";
+import { audioContext } from "../../core/dom.js";
+import { at, isRecord, isInteger } from "../../core/guards.js";
+import { createObservable } from "../../core/observable.js";
+import { createSequencerEngine } from "../../core/sequencer-engine.js";
+import { readStored, writeStored } from "../../core/storage.js";
+import { createSections, sectionPosition } from "../../core/sections.js";
 import { widgetStorageKey } from "../../core/widget-storage.js";
-import { mountLiveKeyboard } from "../../core/live-keyboard.js";
-import { createTransport } from "../../core/transport.js";
-import { SCALES, isScaleId, pitchForRow, noteLabel } from "../../core/scales.js";
+import { isScaleId, pitchForRow, noteLabel } from "../../core/scales.js";
+import type { Harmony } from "../../core/scales.js";
+import type { Position } from "../../core/sections.js";
+import type { PianoKey } from "../../core/keyboard-map.js";
+export type Instrument = "bell" | "keys" | "pluck" | "pad";
+const validInstrument = (value: unknown): value is Instrument =>
+  typeof value === "string" && ["bell", "keys", "pluck", "pad"].includes(value);
+const validHarmony = (value: unknown): value is Harmony =>
+  isRecord(value) &&
+  isScaleId(value.scale) &&
+  isInteger(value.transpose) &&
+  Math.abs(value.transpose) <= 12 &&
+  isInteger(value.octave) &&
+  Math.abs(value.octave) <= 2;
 export const SIZE = 16;
-export function rowMidi(row: number, settings?: Partial<Harmony>) { return pitchForRow(row, settings); }
-export function stepDuration(bpm: number) { return 60 / bpm / 4; }
-
-if (typeof document !== "undefined") {
-  document.title = "Tenori-on — световая музыка";
-  document.body.classList.add("tenorion-mode");
-  element("main", HTMLElement).outerHTML = `
-    <main class="tenorion" aria-labelledby="title">
-      <header class="heading"><div><p class="eyebrow">СВЕТОВАЯ МУЗЫКА</p><h1 id="title">Tenori-on</h1></div></header>
-      <div class="sequencer-controls">
-        <button type="button" id="play" aria-pressed="false">▶ Играть</button>
-        <select id="instrument" aria-label="Инструмент"><option value="bell">Колокольчик</option><option value="keys">Электропиано</option><option value="pluck">Щипковый</option><option value="pad">Синтезатор</option></select>
-        <label class="tempo"> <input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
-        <button type="button" id="clear" aria-label="Очистить текущую секцию" title="Очистить текущую секцию">Сброс</button>
-      </div>
-
-      <div class="harmony-controls">
-        <select id="scale" aria-label="Гамма">${Object.entries(SCALES).map(([id, scale]) => `<option value="${id}">${scale.name}</option>`).join("")}</select>
-        <label>Сдвиг <input id="transpose" type="number" min="-12" max="12" value="0" aria-label="Транспозиция в полутонах"></label>
-        <label>Октава <input id="octave" type="number" min="-2" max="2" value="0" aria-label="Сдвиг октавы"></label>
-      </div>
-      <div class="light-grid" role="group" aria-label="Сетка нот: 16 шагов, 16 высот"></div>
-      <p class="sequencer-hint">4 секции × 16 шагов · красная точка — играет</p>
-    </main>`;
-  const grid = element(".light-grid", HTMLDivElement);
-  const play = byId("play", HTMLButtonElement);
-  const tempo = byId("tempo", HTMLInputElement);
-  const instrument = byId("instrument", HTMLSelectElement);
-  const scaleControl = byId("scale", HTMLSelectElement);
-  const transposeControl = byId("transpose", HTMLInputElement);
-  const octaveControl = byId("octave", HTMLInputElement);
-  const harmonyKey = widgetStorageKey("tenorion-harmony-v1");
-  let harmony: Harmony = readStored(harmonyKey, { scale: "pentatonic", transpose: 0, octave: 0 }, {
-    validate: validHarmony,
+export function rowMidi(row: number, settings?: Partial<Harmony>) {
+  return pitchForRow(row, settings);
+}
+export function stepDuration(bpm: number) {
+  return 60 / bpm / 4;
+}
+interface Voice {
+  oscillator: OscillatorNode;
+  gain: GainNode;
+  time: number;
+  live: boolean;
+}
+const PRESETS: Record<
+  Instrument,
+  { type: OscillatorType; attack: number; decay: number; harmonics?: number[] }
+> = {
+  bell: {
+    type: "sine",
+    attack: 0.008,
+    decay: 0.85,
+    harmonics: [1, 0, 0.3, 0, 0.12],
+  },
+  keys: { type: "triangle", attack: 0.012, decay: 0.65 },
+  pluck: { type: "sawtooth", attack: 0.004, decay: 0.25 },
+  pad: {
+    type: "sine",
+    attack: 0.09,
+    decay: 1.2,
+    harmonics: [1, 0.3, 0.14, 0.06],
+  },
+};
+export function createTenorion() {
+  const observable = createObservable(),
+    sequence = createSections("tenorion", SIZE),
+    voices = new Set<Voice>();
+  const harmonyKey = widgetStorageKey("tenorion-harmony-v1"),
+    instrumentKey = widgetStorageKey("tenorion-instrument-v1");
+  let harmony: Harmony = readStored(
+    harmonyKey,
+    { scale: "pentatonic", transpose: 0, octave: 0 },
+    { validate: validHarmony },
+  );
+  let instrument: Instrument = readStored(instrumentKey, "bell", {
+    raw: true,
+    validate: validInstrument,
   });
-  scaleControl.value = String(harmony.scale);
-  transposeControl.value = String(harmony.transpose);
-  octaveControl.value = String(harmony.octave);
-  const instrumentKey = widgetStorageKey("tenorion-instrument-v1");
-  instrument.value = readStored(instrumentKey, "bell", { raw: true, validate: validInstrument });
-  instrument.addEventListener("change", () => writeStored(instrumentKey, instrument.value, { raw: true }));
-  const sequence = createSections("tenorion", SIZE);
-  function savePattern() { sequence.save(); }
-  const cells: HTMLButtonElement[] = [];
-  const voices = new Set<{ oscillator: OscillatorNode; gain: GainNode; time: number; live: boolean }>();
-  let context: AudioContext, master: GainNode, running = false;
-  let transport: ReturnType<typeof createTransport>, scheduler: ReturnType<typeof createScheduler>;
-  function resetSchedule() {
-    if (!running) return;
-    scheduler?.reset();
-    for (const voice of voices) if (voice.time > context.currentTime) voice.oscillator.stop();
-  }
-  transport = createTransport(state => {
-    tempo.value = String(state.bpm);
-    resetSchedule();
-  }, () => {});
-  tempo.value = String(transport.state.bpm);
-
-  function setCell(row: number, column: number, enabled: boolean) {
-    at(sequence.pattern, row)[column] = enabled;
-    const cell = at(cells, row * SIZE + column);
-    cell.classList.toggle("is-on", enabled);
-    cell.setAttribute("aria-pressed", String(enabled));
-  }
-  for (let row = 0; row < SIZE; row++) {
-    const noteName = noteLabel(rowMidi(row, harmony));
-    const label = document.createElement("span");
-    label.className = "row-note";
-    label.textContent = noteName;
-    label.setAttribute("aria-hidden", "true");
-    grid.append(label);
-    for (let column = 0; column < SIZE; column++) {
-      const cell = document.createElement("button");
-      cell.type = "button";
-      cell.className = "light-cell";
-      cell.dataset.column = String(column);
-      cell.setAttribute("aria-label", `Шаг ${column + 1}, нота ${noteName}`);
-      cell.setAttribute("aria-pressed", "false");
-      cell.tabIndex = row === 0 && column === 0 ? 0 : -1;
-      cell.addEventListener("click", () => {
-        setCell(row, column, !at(sequence.pattern, row)[column]);
-        savePattern();
-        for (const item of cells) item.tabIndex = -1;
-        cell.tabIndex = 0;
-      });
-      cell.addEventListener("keydown", event => {
-        const offsets: Partial<Record<string, [number, number]>> = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
-        const offset = offsets[event.key];
-        if (!offset) return;
-        event.preventDefault();
-        const target = at(cells, ((row + offset[0] + SIZE) % SIZE) * SIZE + (column + offset[1] + SIZE) % SIZE);
-        cell.tabIndex = -1;
-        target.tabIndex = 0;
-        target.focus();
-      });
-      cells.push(cell);
-      grid.append(cell);
-    }
-  }
-
-  function updateHarmony() {
-    harmony = {
-      scale: isScaleId(scaleControl.value) ? scaleControl.value : "pentatonic",
-      transpose: Math.min(12, Math.max(-12, Math.round(Number(transposeControl.value) || 0))),
-      octave: Math.min(2, Math.max(-2, Math.round(Number(octaveControl.value) || 0))),
-    };
-    transposeControl.value = String(harmony.transpose);
-    octaveControl.value = String(harmony.octave);
-    const labels = grid.querySelectorAll<HTMLElement>(".row-note");
-    for (let row = 0; row < SIZE; row++) {
-      const name = noteLabel(rowMidi(row, harmony));
-      at(labels, row).textContent = name;
-      for (let column = 0; column < SIZE; column++) at(cells, row * SIZE + column).setAttribute("aria-label", `Шаг ${column + 1}, нота ${name}`);
-    }
-    writeStored(harmonyKey, harmony);
-    resetSchedule();
-    player.refreshLabels();
-  }
-  scaleControl.addEventListener("change", updateHarmony);
-  for (const control of [transposeControl, octaveControl]) {
-    control.addEventListener("change", updateHarmony);
-    control.addEventListener("blur", updateHarmony);
-  }
-
-  const sectionView = mountSections(sequence, grid, cells);
-
+  let context: AudioContext,
+    master: GainNode,
+    playing: Position | null = null;
+  let disposed = false;
+  let lifecycle = 0;
   async function ensureAudio() {
-    context ??= audioContext();
-    if (!master) { master = context.createGain(); master.gain.value = 0.65; master.connect(context.destination); }
+    if (!context || context.state === "closed") context = audioContext();
+    if (!master || master.context !== context) {
+      master = context.createGain();
+      master.gain.value = 0.65;
+      master.connect(context.destination);
+    }
     await context.resume();
   }
   function soundMidi(midi: number, time: number, level: number, live = false) {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    const presets: Record<Instrument, { type: OscillatorType; attack: number; decay: number; harmonics?: number[] }> = {
-      bell: { type: "sine", attack: 0.008, decay: 0.85, harmonics: [1, 0, 0.3, 0, 0.12] },
-      keys: { type: "triangle", attack: 0.012, decay: 0.65 },
-      pluck: { type: "sawtooth", attack: 0.004, decay: 0.25 },
-      pad: { type: "sine", attack: 0.09, decay: 1.2, harmonics: [1, 0.3, 0.14, 0.06] },
-    };
-    const preset = presets[validInstrument(instrument.value) ? instrument.value : "bell"];
+    const oscillator = context.createOscillator(),
+      gain = context.createGain(),
+      preset = PRESETS[instrument];
     oscillator.type = preset.type;
-    if (preset.harmonics) oscillator.setPeriodicWave(context.createPeriodicWave(new Float32Array(preset.harmonics.length + 1), new Float32Array([0, ...preset.harmonics])));
+    if (preset.harmonics)
+      oscillator.setPeriodicWave(
+        context.createPeriodicWave(
+          new Float32Array(preset.harmonics.length + 1),
+          new Float32Array([0, ...preset.harmonics]),
+        ),
+      );
     oscillator.frequency.value = 440 * 2 ** ((midi - 69) / 12);
     gain.gain.setValueAtTime(0.0001, time);
     gain.gain.exponentialRampToValueAtTime(level, time + preset.attack);
-    if (live) gain.gain.exponentialRampToValueAtTime(level * 0.3, time + 2);
-    else gain.gain.exponentialRampToValueAtTime(0.0001, time + preset.decay);
+    gain.gain.exponentialRampToValueAtTime(
+      live ? level * 0.3 : 0.0001,
+      time + (live ? 2 : preset.decay),
+    );
     const filter = context.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = instrument.value === "pluck" ? 1800 : 7000;
+    filter.frequency.value = instrument === "pluck" ? 1800 : 7000;
     oscillator.connect(filter).connect(gain).connect(master);
     oscillator.start(time);
     if (!live) oscillator.stop(time + preset.decay + 0.05);
     const voice = { oscillator, gain, time, live };
     voices.add(voice);
-    oscillator.onended = () => { voices.delete(voice); oscillator.disconnect(); filter.disconnect(); gain.disconnect(); };
+    oscillator.onended = () => {
+      voices.delete(voice);
+      oscillator.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+    };
     return voice;
   }
-  const player = mountLiveKeyboard({
-    async onNoteOn(key) {
-      await ensureAudio();
-      return soundMidi(key.midi + harmony.transpose + harmony.octave * 12, context.currentTime, 0.16, true);
-    },
-    onNoteOff(voice) {
-      if (!voice) return;
-      voice.gain.gain.cancelScheduledValues(context.currentTime);
-      voice.gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.12);
-      voice.oscillator.stop(context.currentTime + 0.75);
-    },
-    labelFor: key => noteLabel(key.midi + harmony.transpose + harmony.octave * 12),
-  });
-  scheduler = createScheduler({
-    onError() { stop(); play.textContent = 'Повторить'; },
-    context: () => context, transport: () => transport.state,
+  function release(voice: Voice | undefined) {
+    if (!voice || !context) return;
+    voice.gain.gain.cancelScheduledValues(context.currentTime);
+    voice.gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.12);
+    voice.oscillator.stop(context.currentTime + 0.75);
+  }
+  const engine = createSequencerEngine({
+    prepare: ensureAudio,
+    context: () => context,
+    onChange: observable.notify,
     onStep({ step, time }) {
       const { section, column } = sectionPosition(step);
-      const rows = at(sequence.state.patterns, section).flatMap((row, index) => row[column] ? [index] : []);
-      for (const row of rows) soundMidi(rowMidi(row, harmony), time, 0.22 / Math.max(1, rows.length));
+      const rows = at(sequence.state.patterns, section).flatMap((row, index) =>
+        row[column] ? [index] : [],
+      );
+      for (const row of rows)
+        soundMidi(rowMidi(row, harmony), time, 0.22 / Math.max(1, rows.length));
     },
-    onVisual: step => sectionView.showStep(sectionPosition(step)),
+    onVisual(step) {
+      playing = sectionPosition(step);
+      observable.notify();
+    },
+    onReset() {
+      for (const voice of voices)
+        if (voice.time > context.currentTime && !voice.live)
+          voice.oscillator.stop();
+    },
+    onStop() {
+      playing = null;
+      if (context)
+        for (const voice of voices)
+          if (!voice.live) {
+            voice.gain.gain.cancelScheduledValues(context.currentTime);
+            voice.gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.015);
+            voice.oscillator.stop(context.currentTime + 0.05);
+          }
+    },
   });
-  function stop() {
-    playback.cancelStart();
-    running = false;
-    scheduler.stop();
-    for (const voice of voices) {
-      if (voice.live) continue;
-      voice.gain.gain.cancelScheduledValues(context.currentTime);
-      voice.gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.015);
-      voice.oscillator.stop(context.currentTime + 0.05);
-    }
-    sectionView.stop();
-    play.textContent = "▶ Играть";
-    play.setAttribute("aria-pressed", "false");
-  }
-  const playback = bindPlayback(play, {
-    prepare: ensureAudio, isRunning: () => running, stop,
-    start() { running = true; transport.refresh(); scheduler.start(); },
-  });
-  function updateTempo() {
-    const bpm = Math.min(240, Math.max(40, Number(tempo.value) || 110));
-    tempo.value = String(bpm);
-    if (bpm !== transport.state.bpm) transport.setTempo(bpm);
-  }
-  tempo.addEventListener("change", updateTempo);
-  tempo.addEventListener("blur", updateTempo);
-  byId("clear", HTMLButtonElement).addEventListener("click", () => {
-    stop();
-    for (let row = 0; row < SIZE; row++) for (let column = 0; column < SIZE; column++) setCell(row, column, false);
-    savePattern();
-  });
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) { transport.refresh(); resetSchedule(); }
-  });
-  window.addEventListener("pagehide", event => { stop(); if (!event.persisted) transport.close(); });
+  return {
+    ...observable,
+    engine,
+    sequence,
+    get harmony() {
+      return harmony;
+    },
+    get instrument() {
+      return instrument;
+    },
+    get playing() {
+      return playing;
+    },
+    connect() {
+      disposed = false;
+      lifecycle++;
+      sequence.save();
+      const disconnect = engine.connect();
+      return () => {
+        disposed = true;
+        lifecycle++;
+        disconnect();
+        for (const voice of voices) release(voice);
+        voices.clear();
+        if (context && context.state !== "closed") void context.close();
+      };
+    },
+    select(section: number) {
+      sequence.state.selected = section;
+      sequence.save();
+      observable.notify();
+    },
+    edit(row: number, column: number) {
+      const notes = at(sequence.pattern, row);
+      notes[column] = !notes[column];
+      sequence.save();
+      observable.notify();
+    },
+    clear() {
+      engine.stop();
+      for (const row of sequence.pattern) row.fill(false);
+      sequence.save();
+      observable.notify();
+    },
+    setInstrument(value: string) {
+      if (!validInstrument(value)) return;
+      instrument = value;
+      writeStored(instrumentKey, instrument, { raw: true });
+      observable.notify();
+    },
+    setHarmony(next: Harmony) {
+      if (!validHarmony(next)) return;
+      harmony = { ...next };
+      writeStored(harmonyKey, harmony);
+      engine.reset();
+      observable.notify();
+    },
+    labelFor: (key: PianoKey) =>
+      noteLabel(key.midi + harmony.transpose + harmony.octave * 12),
+    async onNoteOn(key: PianoKey) {
+      if (disposed) return;
+      const activeLifecycle = lifecycle;
+      await ensureAudio();
+      if (disposed || activeLifecycle !== lifecycle) return;
+      return soundMidi(
+        key.midi + harmony.transpose + harmony.octave * 12,
+        context.currentTime,
+        0.16,
+        true,
+      );
+    },
+    onNoteOff: release,
+  };
 }

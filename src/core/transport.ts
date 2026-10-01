@@ -1,32 +1,70 @@
-import { isRecord, isNumber, isInteger } from './guards.js';
-export interface TransportState { bpm: number; revision: number; sender: string }
+import { isRecord, isNumber, isInteger } from "./guards.js";
+export interface TransportState {
+  bpm: number;
+  revision: number;
+  sender: string;
+}
 // Every device derives musical phase from Unix time and the selected BPM.
 export const DEFAULT_TRANSPORT = { bpm: 110, revision: 0, sender: "" };
 export const wallTime = () => Date.now();
-export function beatAt(state: Pick<TransportState, 'bpm'>, time: number): number {
-  return time * state.bpm / 15000;
+export function beatAt(
+  state: Pick<TransportState, "bpm">,
+  time: number,
+): number {
+  return (time * state.bpm) / 15000;
 }
-export function boundaryAfter(state: Pick<TransportState, 'bpm'>, time: number): {step: number; time: number} {
+export function boundaryAfter(
+  state: Pick<TransportState, "bpm">,
+  time: number,
+): { step: number; time: number } {
   const step = Math.ceil(beatAt(state, time));
-  return { step, time: step * 15000 / state.bpm };
+  return { step, time: (step * 15000) / state.bpm };
 }
-export function changeTempo(state: TransportState, bpm: number, sender: string): TransportState {
+export function changeTempo(
+  state: TransportState,
+  bpm: number,
+  sender: string,
+): TransportState {
   return { bpm, revision: state.revision + 1, sender };
 }
-const valid = (value: unknown): value is TransportState => isRecord(value) && isNumber(value.bpm) && value.bpm >= 40 && value.bpm <= 240
-  && isInteger(value.revision) && value.revision >= 0 && typeof value.sender === 'string';
-export function createTransport(onChange: (state: TransportState) => void = () => {}, onAvailability: (available: boolean) => void = () => {}) {
+const valid = (value: unknown): value is TransportState =>
+  isRecord(value) &&
+  isNumber(value.bpm) &&
+  value.bpm >= 40 &&
+  value.bpm <= 240 &&
+  isInteger(value.revision) &&
+  value.revision >= 0 &&
+  typeof value.sender === "string";
+export function createTransport(
+  onChange: (state: TransportState) => void = () => {},
+  onAvailability: (available: boolean) => void = () => {},
+) {
   const key = "piano-shared-transport-v1";
   const sender = crypto.randomUUID();
-  let state: TransportState = { ...DEFAULT_TRANSPORT }, closed = false;
+  let state: TransportState = { ...DEFAULT_TRANSPORT },
+    closed = false;
   let channel: BroadcastChannel | undefined;
   function read(): TransportState | null {
-    try { const stored: unknown = JSON.parse(localStorage.getItem(key) ?? 'null'); return valid(stored) ? stored : null; } catch { return null; }
+    try {
+      const stored: unknown = JSON.parse(localStorage.getItem(key) ?? "null");
+      return valid(stored) ? stored : null;
+    } catch {
+      return null;
+    }
   }
   function accept(candidate: unknown) {
     if (closed || !valid(candidate)) return;
-    if (candidate.revision < state.revision || (candidate.revision === state.revision && candidate.sender <= state.sender)) return;
-    state = { bpm: candidate.bpm, revision: candidate.revision, sender: candidate.sender };
+    if (
+      candidate.revision < state.revision ||
+      (candidate.revision === state.revision &&
+        candidate.sender <= state.sender)
+    )
+      return;
+    state = {
+      bpm: candidate.bpm,
+      revision: candidate.revision,
+      sender: candidate.sender,
+    };
     onChange(state);
   }
   accept(read());
@@ -36,16 +74,23 @@ export function createTransport(onChange: (state: TransportState) => void = () =
     channel.onmessage = (event: MessageEvent<unknown>) => {
       const data = event.data;
       if (!isRecord(data)) return;
-      if (data.type === "hello") activeChannel.postMessage({ type: "state", state });
+      if (data.type === "hello")
+        activeChannel.postMessage({ type: "state", state });
       else if (data.type === "state") accept(data.state);
     };
     channel.postMessage({ type: "hello" });
     onAvailability(true);
-  } catch { onAvailability(false); }
-  const onStorage = (event: StorageEvent) => { if (event.key === key) accept(read()); };
+  } catch {
+    onAvailability(false);
+  }
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === key) accept(read());
+  };
   window.addEventListener("storage", onStorage);
   return {
-    get state() { return state; },
+    get state() {
+      return state;
+    },
     async setTempo(bpm: number): Promise<void> {
       if (closed || !Number.isFinite(bpm) || bpm < 40 || bpm > 240) return;
       const update = () => {
@@ -54,14 +99,30 @@ export function createTransport(onChange: (state: TransportState) => void = () =
         if (bpm === state.bpm) return;
         const next = changeTempo(state, bpm, sender);
         accept(next);
-        try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* BroadcastChannel still works without persistence. */ }
+        try {
+          localStorage.setItem(key, JSON.stringify(next));
+        } catch {
+          /* BroadcastChannel still works without persistence. */
+        }
         channel?.postMessage({ type: "state", state: next });
       };
       if (navigator.locks) {
-        try { await navigator.locks.request(key, update); } catch { update(); }
+        try {
+          await navigator.locks.request(key, update);
+        } catch {
+          update();
+        }
       } else update();
     },
-    refresh() { if (closed) return; accept(read()); channel?.postMessage({ type: "hello" }); },
-    close() { closed = true; channel?.close(); window.removeEventListener("storage", onStorage); },
+    refresh() {
+      if (closed) return;
+      accept(read());
+      channel?.postMessage({ type: "hello" });
+    },
+    close() {
+      closed = true;
+      channel?.close();
+      window.removeEventListener("storage", onStorage);
+    },
   };
 }

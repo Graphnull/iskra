@@ -13,6 +13,6 @@ export function targetElement(event) {
 export function audioContext() {
     const Constructor = window.AudioContext || window.webkitAudioContext;
     if (!Constructor)
-        throw new Error('Web Audio is unavailable');
+        throw new Error("Web Audio is unavailable");
     return new Constructor();
 }

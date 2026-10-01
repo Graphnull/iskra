@@ -3,7 +3,11 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "rootDir": "src",
     "outDir": "site",
     "strict": true,
@@ -17,7 +21,11 @@
     "noEmitOnError": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
-    "skipLibCheck": false
+    "skipLibCheck": false,
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
 }

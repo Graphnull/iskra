@@ -1,11 +1,11 @@
 export function isRecord(value) {
-    return typeof value === 'object' && value !== null;
+    return typeof value === "object" && value !== null;
 }
 export function isNumber(value) {
-    return typeof value === 'number' && Number.isFinite(value);
+    return typeof value === "number" && Number.isFinite(value);
 }
 export function isInteger(value) {
-    return typeof value === 'number' && Number.isInteger(value);
+    return typeof value === "number" && Number.isInteger(value);
 }
 export function at(values, index) {
     const value = values[index];
