@@ -33,3 +33,19 @@ test('live input releases a note even if audio initialization finishes after key
     assert.deepEqual(released,['voice']);
   } finally { globalThis.document=previousDocument; globalThis.window=previousWindow; }
 });
+
+test('range focus keeps musical key input available while keyup and blur release held notes',async()=>{
+  const previousDocument=globalThis.document,previousWindow=globalThis.window,handlers={},windowHandlers={};
+  globalThis.document={addEventListener(name,handler){handlers[name]=handler;}};
+  globalThis.window={addEventListener(name,handler){windowHandlers[name]=handler;}};
+  try{
+    const released=[];let starts=0;
+    bindKeyInput({onNoteOn:()=>++starts,onNoteOff:voice=>released.push(voice)});
+    const target={closest:selector=>selector.includes('input:not')?null:true};
+    const event={code:'KeyZ',target,preventDefault(){}};
+    handlers.keydown(event);await Promise.resolve();
+    assert.equal(starts,1);assert.deepEqual(released,[]);
+    handlers.keyup(event);assert.deepEqual(released,[1]);
+    handlers.keydown(event);await Promise.resolve();windowHandlers.blur();assert.deepEqual(released,[1,2]);
+  }finally{globalThis.document=previousDocument;globalThis.window=previousWindow;}
+});

@@ -1,34 +1,26 @@
-import { synthVoice, releaseVoice } from './synth-audio.mjs?v=14';
+import { synthVoice, releaseVoice, updateSynthVoice } from './synth-audio.mjs?v=15';
 import { widgetStorageKey } from './widget-storage.mjs?v=8';
-import { mountLiveKeyboard } from './live-keyboard.mjs?v=14';
+import { mountLiveKeyboard } from './live-keyboard.mjs?v=15';
 import { createTransport, boundaryAfter, wallTime } from './transport.mjs?v=2';
 import { noteLabel } from './scales.mjs?v=4';
-import { SYNTH_ROWS, SYNTH_STEPS, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes } from './synth-sequence.mjs?v=14';
-import { createMicrophone, microphoneError, sampleBounds } from './microphone.mjs?v=11';
-import { sampleStore } from './sample-store.mjs?v=11';
+import { SYNTH_ROWS, SYNTH_STEPS, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes } from './synth-sequence.mjs?v=15';
 
-document.title = 'Синтезатор — ноты и семплы';
+document.title = 'Синтезатор — волны и ноты';
 document.body.classList.add('tenorion-mode');
 document.querySelector('main').outerHTML = `
 <main class="tenorion synth" aria-labelledby="title">
   <header class="heading"><h1 id="title">Синтезатор</h1></header>
   <div class="sequencer-controls">
     <button id="play" type="button" aria-pressed="false">▶ Играть</button>
-    <select id="sound" aria-label="Звук"><option value="pad">Мягкий синт</option><option value="bass">808 бас</option><option value="lead">Лид</option><option value="sample" disabled>Мой семпл</option></select>
+    <select id="sound" aria-label="Звук"><option value="pad">Мягкий синт</option><option value="bass">808 бас</option><option value="lead">Лид</option></select>
     <label class="tempo"><input id="tempo" type="number" min="40" max="240" value="110" aria-label="Темп в ударах в минуту"></label>
     <button id="clear" type="button" aria-label="Очистить текущую секцию">Сброс</button>
   </div>
   <div class="synth-tools">
     <label>Длина <select id="length" aria-label="Длина ноты в шагах">${[1,2,4,8,16].map(n=>`<option value="${n}"${n===4?' selected':''}>${n}</option>`).join('')}</select></label>
+    <label class="wave-control">Волна <select id="waveform" aria-label="Форма волны"><option value="sine">Синус</option><option value="triangle">Треугольник</option><option value="sawtooth">Пила</option><option value="square">Прямоугольник</option></select></label>
     <label>Октава <input id="octave" type="number" min="-2" max="2" value="0" aria-label="Сдвиг октавы"></label>
   </div>
-  <div class="sample-controls">
-    <button id="record" type="button">● Микрофон</button>
-    <button id="record-window" type="button" hidden>Записать в окне ↗</button>
-    <label>Нота <select id="root" aria-label="Исходная нота семпла">${Array.from({length:25},(_,i)=>48+i).map(m=>`<option value="${m}">${noteLabel(m)}</option>`).join('')}</select></label>
-    <label><input id="loop" type="checkbox" checked> Цикл</label>
-  </div>
-  <p id="sample-status" class="sample-status" role="status">Запиши до 10 секунд звука · семпл остаётся в браузере</p>
   <div class="section-controls" role="group" aria-label="Четыре секции по 16 шагов"><span>Секции</span>${[1,2,3,4].map(n=>`<button type="button" data-section="${n-1}" aria-label="Секция ${n}">${n}</button>`).join('')}</div>
   <div class="light-grid synth-grid" role="group" aria-label="Ноты синтезатора"></div>
   <p class="sequencer-hint">Нажми — нота · протяни — длина · повторно — удалить</p>
@@ -36,18 +28,18 @@ document.querySelector('main').outerHTML = `
 const $ = id => document.getElementById(id);
 const grid = document.querySelector('.synth-grid');
 const stateKey = widgetStorageKey('synth-sequence-v1');
-const sampleKey = widgetStorageKey('synth-sample-v1');
 let state = restoreSynth(null);
 for (const storageName of ['sessionStorage','localStorage']) {
   try { const saved = JSON.parse(window[storageName].getItem(stateKey)); if ([1,2].includes(saved?.version)) { state = restoreSynth(saved); break; } } catch {}
 }
-$('sound').value = state.sound === 'sample' ? 'pad' : state.sound;
-$('octave').value = state.octave; $('root').value = state.root; $('loop').checked = state.loop;
+$('sound').value = state.sound;
+$('waveform').value = state.waveform;
+$('octave').value = state.octave;
 $('length').value = state.length;
 function save() {
   for (const name of ['sessionStorage','localStorage']) { try { window[name].setItem(stateKey, JSON.stringify(state)); } catch {} }
 }
-let context, master, sample, timer, cursor, running = false, starting = false, catchUp = true, playing = null;
+let context, master, timer, cursor, running = false, starting = false, catchUp = true, playing = null;
 const voices = new Set(), visuals = new Set(), cells = [], labels = [];
 function audioContext() {
   if (!context) {
@@ -60,7 +52,7 @@ function audioContext() {
 async function ensureAudio() { await audioContext().resume(); }
 function release(voice) { if(context) releaseVoice(context,voice); }
 function sound(midi,time,duration=null,live=false) {
-  const voice=synthVoice(context,master,{...state,sound:$('sound').value,sample},midi,time,duration,live);
+  const voice=synthVoice(context,master,{...state,sound:$('sound').value},midi,time,duration,live);
   if(!voice)return null;
   voices.add(voice);
   voice.source.onended=()=>{voices.delete(voice);voice.source.disconnect();voice.gain.disconnect();voice.filter.disconnect();};
@@ -127,7 +119,20 @@ function render() {
 document.querySelectorAll('[data-section]').forEach(button=>button.addEventListener('click',()=>{drag=null; state.selected=Number(button.dataset.section); save(); render();}));
 const controlPanel=document.createElement('section');
 controlPanel.className='synth-panel'; controlPanel.setAttribute('aria-label','Пульт синтезатора');
-const knobs=[['cutoff','Фильтр',200,10000,'Hz'],['resonance','Резонанс',0,12,'Q'],['attack','Атака',0.003,2,'s'],['decay','Затухание',0.02,8,'s'],['sustain','Удержание',0,1,'%'],['release','Отпускание',0.05,4,'s']];
+controlPanel.innerHTML=`<div class="envelope-view"><div class="envelope-title"><span>Огибающая · ADSR</span><span id="held-notes">Играй Z–/ или Q–]</span></div><svg id="envelope" viewBox="0 0 320 64" role="img" aria-label="Огибающая громкости"><path class="envelope-axis" d="M8 5V52H312"/><path id="envelope-path"/><g id="envelope-labels"></g></svg></div>`;
+function renderEnvelope(){
+  const total=state.attack+state.decay+state.release+1;
+  const ax=8+state.attack/total*304,dx=ax+state.decay/total*304,sx=dx+304/total,sy=52-state.sustain*44;
+  const points=[[8,52]],floor=.0001/(state.sound==='bass'?.42:.18);
+  function ramp(x1,x2,from,to){for(let i=1;i<=24;i++){const t=i/24;points.push([x1+(x2-x1)*t,52-44*from*(to/from)**t]);}}
+  ramp(8,ax,floor,1);ramp(ax,dx,1,Math.max(floor,state.sustain));points.push([sx,sy]);
+  for(let i=1;i<=24;i++){const t=i/24;points.push([sx+(312-sx)*t,52-44*state.sustain*Math.exp(-6.36*t)]);}
+  controlPanel.querySelector('#envelope-path').setAttribute('d',points.map(([x,y],i)=>`${i?'L':'M'}${x} ${y}`).join(' '));
+  controlPanel.querySelector('#envelope').setAttribute('aria-label',`Огибающая: атака ${Math.round(state.attack*1000)} мс, затухание ${Math.round(state.decay*1000)} мс, сустейн ${Math.round(state.sustain*100)}%, релиз ${Math.round(state.release*1000)} мс`);
+  controlPanel.querySelector('#envelope-labels').innerHTML=[['A',(8+ax)/2],['D',(ax+dx)/2],['S',(dx+sx)/2],['R',(sx+312)/2]].map(([label,x])=>`<text x="${x}" y="63" text-anchor="middle">${label}</text>`).join('');
+}
+const heldNotes=new Map();
+const knobs=[['cutoff','Фильтр',200,10000,'Hz'],['resonance','Резонанс',0,12,'Q'],['attack','Атака',0.003,2,'s'],['decay','Затухание',0.02,8,'s'],['sustain','Сустейн',0,1,'%'],['release','Релиз',0.05,4,'s']];
 const refreshKnobs=[];
 for(const [key,label,min,max,unit] of knobs){
   const item=document.createElement('label');item.className='synth-knob';
@@ -137,11 +142,15 @@ for(const [key,label,min,max,unit] of knobs){
   const decode=x=>logarithmic?min*(max/min)**(x/1000):min+(max-min)*x/1000;
   const encode=x=>logarithmic?Math.log(x/min)/Math.log(max/min)*1000:(x-min)/(max-min)*1000;
   function refresh(){input.value=Math.round(encode(state[key]));item.style.setProperty('--angle',`${Number(input.value)*0.27-135}deg`);output.textContent=unit==='s'?`${Math.round(state[key]*1000)} мс`:unit==='%'?`${Math.round(state[key]*100)}%`:unit==='Hz'?`${Math.round(state[key])} Гц`:state[key].toFixed(1);input.setAttribute('aria-valuetext',output.textContent);}
-  input.addEventListener('input',()=>{state[key]=decode(Number(input.value));refresh();save();if(context)for(const voice of voices){if(key==='cutoff')voice.filter.frequency.setTargetAtTime(state.cutoff,context.currentTime,.02);if(key==='resonance')voice.filter.Q.setTargetAtTime(state.resonance,context.currentTime,.02);}});
+  input.addEventListener('input',()=>{
+    state[key]=decode(Number(input.value));refresh();renderEnvelope();save();
+    if(context)for(const voice of voices)updateSynthVoice(context,voice,key,state[key]);
+  });
   refreshKnobs.push(refresh);refresh();controlPanel.append(item);
 }
 document.querySelector('.sequencer-hint').textContent='Нажми — нота · протяни — длина · Пульт — настройки звука';
-const player=mountLiveKeyboard({controlPanel,async onNoteOn(key){await ensureAudio();return sound(key.midi+pitchOffset(),context.currentTime,null,true);},onNoteOff:voice=>release(voice),labelFor:key=>noteLabel(key.midi+pitchOffset())});
+renderEnvelope();
+const player=mountLiveKeyboard({controlPanel,onHighlight(key,active){if(active)heldNotes.set(key.code,noteLabel(key.midi+pitchOffset()));else heldNotes.delete(key.code);$('held-notes').textContent=heldNotes.size?[...heldNotes.values()].join(' · '):'Играй Z–/ или Q–]';},async onNoteOn(key){await ensureAudio();return sound(key.midi+pitchOffset(),context.currentTime,null,true);},onNoteOff:voice=>release(voice),labelFor:key=>noteLabel(key.midi+pitchOffset())});
 function schedule(){
   const now=wallTime(); cursor=Math.max(cursor,now+10);
   while(true){
@@ -166,47 +175,10 @@ $('play').addEventListener('click',async()=>{
 $('tempo').addEventListener('change',()=>{const bpm=Math.min(240,Math.max(40,Number($('tempo').value)||110));$('tempo').value=bpm;transport.setTempo(bpm);});
 $('clear').addEventListener('click',()=>{state.sections[state.selected]=[];save();render();resetSchedule();});
 $('octave').addEventListener('change',()=>{state.octave=Math.min(2,Math.max(-2,Math.round(Number($('octave').value)||0)));$('octave').value=state.octave;save();render();player.refreshLabels();resetSchedule();});
-$('sound').addEventListener('change',()=>{state.sound=$('sound').value;Object.assign(state,state.sound==='bass'?{attack:.003,decay:4,sustain:.083,release:.35}:{attack:.015,decay:.4,sustain:.7,release:.35});refreshKnobs.forEach(refresh=>refresh());save();render();player.refreshLabels();resetSchedule();});
-$('root').addEventListener('change',()=>{state.root=Number($('root').value);save();resetSchedule();});
-$('loop').addEventListener('change',()=>{state.loop=$('loop').checked;save();resetSchedule();});
+$('sound').addEventListener('change',()=>{state.sound=$('sound').value;state.waveform={pad:'triangle',bass:'sine',lead:'square'}[state.sound];$('waveform').value=state.waveform;Object.assign(state,state.sound==='bass'?{attack:.003,decay:4,sustain:.083,release:.35}:{attack:.015,decay:.4,sustain:.7,release:.35});refreshKnobs.forEach(refresh=>refresh());renderEnvelope();save();render();player.refreshLabels();resetSchedule();});
+$('waveform').addEventListener('change',()=>{state.waveform=$('waveform').value;save();if(context)for(const voice of voices)updateSynthVoice(context,voice,'waveform',state.waveform);});
 $('length').addEventListener('change',()=>{state.length=Number($('length').value);save();});
 
-async function loadSample(blob, persist=true){
-  const ctx=audioContext(),decoded=await ctx.decodeAudioData(await blob.arrayBuffer());
-  if(decoded.duration>12)throw new Error('Семпл длиннее 10 секунд. Запиши короче.');
-  const channels=Array.from({length:decoded.numberOfChannels},(_,i)=>decoded.getChannelData(i));
-  const bounds=sampleBounds(channels,decoded.sampleRate),buffer=ctx.createBuffer(decoded.numberOfChannels,bounds.end-bounds.start,decoded.sampleRate);
-  channels.forEach((channel,i)=>buffer.copyToChannel(channel.subarray(bounds.start,bounds.end),i));
-  sample=buffer;$('sound').querySelector('[value="sample"]').disabled=false;
-  if(persist||state.sound==='sample'){$('sound').value='sample';state.sound='sample';}
-  if(persist)save();render();player.refreshLabels();resetSchedule();
-  $('sample-status').textContent=`Мой семпл · ${sample.duration.toFixed(1)} с · готов к игре`;
-  if(persist)try{await sampleStore(sampleKey,blob);}catch{$('sample-status').textContent='Семпл готов · браузер не смог сохранить запись';}
-}
-const mic=createMicrophone({
-  onState(status,seconds){$('record').disabled=status==='requesting'||status==='processing';$('record').classList.toggle('is-recording',status==='recording');$('record').textContent=status==='recording'?`■ Стоп ${seconds} с`:status==='requesting'?'Разреши микрофон…':status==='processing'?'Обработка…':'● Микрофон';},
-  onBlob:loadSample,
-  onError(error){$('sample-status').textContent=microphoneError(error);$('record-window').hidden=false;},
-});
-let popup, token;
-function openRecorder(){
-  stop();
-  token=crypto.randomUUID();const url=new URL(location.href);url.searchParams.set('mode','recorder');url.searchParams.set('session',token);
-  popup=window.open(url.href,'_blank','popup,width=376,height=376');
-  if(!popup)$('sample-status').textContent='Разреши всплывающее окно для записи.';
-}
-$('record').addEventListener('click',()=>{
-  if(mic.recording)return mic.stop();
-  const policy=document.permissionsPolicy||document.featurePolicy;
-  if(policy?.allowsFeature&&!policy.allowsFeature('microphone'))return openRecorder();
-  stop();mic.start();
-});
-$('record-window').addEventListener('click',openRecorder);
-window.addEventListener('message',async event=>{
-  if(event.origin!==location.origin||event.source!==popup||event.data?.type!=='synth-sample'||event.data.session!==token||!(event.data.blob instanceof Blob))return;
-  try{await loadSample(event.data.blob);popup.postMessage({type:'sample-received',session:token},location.origin);}catch(error){$('sample-status').textContent=microphoneError(error);popup.postMessage({type:'sample-failed',session:token,error:microphoneError(error)},location.origin);}
-});
-sampleStore(sampleKey).then(async blob=>{if(blob instanceof Blob)await loadSample(blob,false);}).catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){transport.refresh();resetSchedule();}});
-window.addEventListener('pagehide',()=>{stop();mic.dispose();});
+window.addEventListener('pagehide',()=>{stop();});
 render();

@@ -26,7 +26,7 @@ export function bindKeyInput({ onNoteOn, onNoteOff = () => {}, onHighlight = () 
   }
   function releaseAll() { for (const source of held.keys()) end(source); }
   document.addEventListener('keydown', event => {
-    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.target.closest('input, select, textarea, [contenteditable="true"]')) return;
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.target.closest('input:not([type="range"]), select, textarea, [contenteditable="true"]')) return;
     const key = keys.get(event.code);
     if (!key) return;
     event.preventDefault();
@@ -38,7 +38,7 @@ export function bindKeyInput({ onNoteOn, onNoteOff = () => {}, onHighlight = () 
   return { start, end, releaseAll };
 }
 
-export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${key.note}${key.octave}`, controlPanel = null }) {
+export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${key.note}${key.octave}`, controlPanel = null, onHighlight = () => {} }) {
   const main = document.querySelector('main');
   const grid = main.querySelector('.light-grid, .drum-grid');
   const header = main.querySelector('header');
@@ -55,7 +55,7 @@ export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${ke
   toggle.textContent = controlPanel ? 'Пульт' : 'Клавиши';
   grid.before(panel);
   const buttons = new Map();
-  const input = bindKeyInput({ onNoteOn, onNoteOff, onHighlight(key, active) { buttons.get(key.code)?.classList.toggle('is-active', active); } });
+  const input = bindKeyInput({ onNoteOn, onNoteOff, onHighlight(key, active) { buttons.get(key.code)?.classList.toggle('is-active', active); onHighlight(key, active); } });
   for (const row of (controlPanel ? [] : ['upper-keyboard', 'lower-keyboard'])) {
     const keys = buildKeyMap().filter(key => key.row === row);
     const keyboard = document.createElement('div');
@@ -109,7 +109,7 @@ export function mountLiveKeyboard({ onNoteOn, onNoteOff, labelFor = key => `${ke
     grid.hidden = show;
     toggle.textContent = show ? 'Сетка' : controlPanel ? 'Пульт' : 'Клавиши';
     toggle.setAttribute('aria-pressed', String(show));
-    input.releaseAll();
+    if (!controlPanel) input.releaseAll();
   });
   refreshLabels(); syncFocus();
   return { refreshLabels };

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {synthPosition,restoreSynth,putNote,noteAt,activeSynthNotes} from './synth-sequence.mjs';
 import {createMicrophone,sampleBounds} from './microphone.mjs';
-import {synthVoice,releaseVoice} from './synth-audio.mjs';
+import {synthVoice,releaseVoice,updateSynthVoice} from './synth-audio.mjs';
 
 test('64-step song boundaries, sustained join and section isolation',()=>{
   assert.deepEqual(synthPosition(15),{section:0,column:15});
@@ -95,4 +95,29 @@ test('synth knobs persist with range validation and control envelope and resonan
   assert.ok(voice.gain.gain.calls.some(c=>c[0]==='ramp'&&Math.abs(c[1]-.072)<1e-8&&c[2]===4.4));
   releaseVoice(context,voice,5);assert.equal(voice.source.stopped,7);
   assert.deepEqual(voice.gain.gain.calls.at(-1),['target',.0001,5,2/6.36]);
+});
+
+test('all four waves reach the oscillator and survive reload; legacy sample falls back to synth',()=>{
+  for(const waveform of ['sine','triangle','sawtooth','square']){
+    const state={...restoreSynth(null),waveform};
+    assert.equal(restoreSynth(state).waveform,waveform);
+    const voice=synthVoice(audioMock(),{},state,69,0,null,true);
+    assert.equal(voice.source.type,waveform);
+    assert.equal(voice.source.stopped,undefined);
+  }
+  assert.equal(restoreSynth({...restoreSynth(null),sound:'sample',waveform:'invalid'}).sound,'pad');
+  const bass=synthVoice(audioMock(),{},{...restoreSynth(null),sound:'bass',waveform:'square'},36,0,null,true);
+  assert.equal(bass.source.type,'square');assert.equal(bass.source.wave,undefined);
+  assert.equal(bass.gain.gain.calls.filter(c=>c[0]==='ramp').length,2);
+});
+
+test('editing a held voice keeps its oscillator alive and the new release is used on keyup',()=>{
+  const context=audioMock(),voice=synthVoice(context,{},restoreSynth(null),69,1,null,true);
+  for(const [key,value] of [['cutoff',800],['resonance',4],['sustain',.6],['release',1.5],['waveform','sawtooth']])updateSynthVoice(context,voice,key,value);
+  assert.equal(voice.released,false);assert.equal(voice.source.stopped,undefined);
+  assert.equal(voice.source.type,'sawtooth');
+  assert.deepEqual(voice.gain.gain.calls.at(-1),['target',.108,2,.03]);
+  releaseVoice(context,voice);assert.equal(voice.source.stopped,3.5);
+  const count=voice.gain.gain.calls.length;updateSynthVoice(context,voice,'sustain',1);
+  assert.equal(voice.gain.gain.calls.length,count);
 });

@@ -281,3 +281,14 @@ h1 { margin: 0; font-size: clamp(20px, 6vw, 27px); line-height: 1.1; letter-spac
 [data-theme="light"] .synth-knob { color: #646259; }
 [data-theme="light"] .synth-knob output { color: #39382f; }
 [data-theme="light"] .knob-dial { background: radial-gradient(circle at 35% 25%, #fff, #d2cec2 75%); border-color: #9f9b8e; box-shadow: 0 2px 4px #5553; }
+.synth-tools .wave-control { flex: 1; }
+.synth-tools .wave-control select { width: 100%; }
+.synth-panel { grid-template-rows: 72px repeat(2, minmax(0, 1fr)); }
+.envelope-view { grid-column: 1 / -1; min-width: 0; }
+.envelope-title { display: flex; justify-content: space-between; gap: 6px; font-size: 9px; color: #bcbab2; }
+#held-notes { color: #dc827a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#envelope { width: 100%; height: 60px; overflow: visible; }
+.envelope-axis { fill: none; stroke: #77746b; stroke-width: 1; }
+#envelope-path { fill: none; stroke: #dc827a; stroke-width: 2; stroke-linejoin: round; }
+#envelope text { fill: #bcbab2; font-size: 9px; }
+[data-theme="light"] .envelope-title, [data-theme="light"] #envelope text { color: #646259; fill: #646259; }

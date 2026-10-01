@@ -12,7 +12,7 @@ export function putNote(notes, row, start, length) {
   return [...notes.filter(note => note.row !== row || note.start + note.length <= start || note.start >= start + next.length), next];
 }
 export function restoreSynth(saved) {
-  const empty = () => ({ version: 2, selected: 0, octave: 0, sound: 'pad', root: 60, loop: true, length: 4, cutoff: 4500, resonance: 0.7, attack: 0.015, decay: 0.4, sustain: 0.7, release: 0.35, sections: [[], [], [], []] });
+  const empty = () => ({ version: 2, selected: 0, octave: 0, sound: 'pad', waveform: 'triangle', root: 60, loop: true, length: 4, cutoff: 4500, resonance: 0.7, attack: 0.015, decay: 0.4, sustain: 0.7, release: 0.35, sections: [[], [], [], []] });
   if (![1,2].includes(saved?.version) || !Array.isArray(saved.sections) || saved.sections.length !== 4) return empty();
   const state = empty();
   const oldSteps = saved.version === 1 ? 64 : SYNTH_STEPS;
@@ -30,7 +30,8 @@ export function restoreSynth(saved) {
   }
   for (const key of ['selected']) if (Number.isInteger(saved[key]) && saved[key] >= 0 && saved[key] < 4) state[key] = saved[key];
   if (Number.isInteger(saved.octave) && Math.abs(saved.octave) <= 2) state.octave = saved.octave;
-  if (['pad','bass','lead','sample'].includes(saved.sound)) state.sound = saved.sound;
+  if (['pad','bass','lead'].includes(saved.sound)) state.sound = saved.sound;
+  state.waveform = ['sine','triangle','sawtooth','square'].includes(saved.waveform) ? saved.waveform : {pad:'triangle',bass:'sine',lead:'square'}[state.sound];
   if (Number.isInteger(saved.root) && saved.root >= 48 && saved.root <= 72) state.root = saved.root;
   if (typeof saved.loop === 'boolean') state.loop = saved.loop;
   if ([1,2,4,8,16,32,64].includes(saved.length)) state.length = Math.min(16, saved.version === 1 ? Math.max(1, Math.ceil(saved.length / 4)) : saved.length);
