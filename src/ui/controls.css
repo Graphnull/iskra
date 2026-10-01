@@ -2,6 +2,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 28px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .eyebrow {
@@ -15,7 +18,7 @@
   margin: 0 0 4px;
 }
 
-.tenorion .eyebrow {
+.heading .eyebrow {
   font-size: 8px;
   line-height: 10px;
   margin: 0;
@@ -92,7 +95,7 @@
 }
 
 @media (max-width: 400px), (max-height: 400px) {
-  .tenorion .eyebrow {
+  .heading .eyebrow {
     display: none;
   }
   .sequencer-controls #play {

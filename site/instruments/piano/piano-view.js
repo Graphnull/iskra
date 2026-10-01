@@ -1,9 +1,9 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { createPiano } from "./piano.js?v=77f7a8b0c2bf";
-import { useController } from "../../ui/hooks.js?v=77f7a8b0c2bf";
-import { FocusIndicator } from "../../ui/focus.js?v=77f7a8b0c2bf";
-import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=77f7a8b0c2bf";
+import { createPiano } from "./piano.js?v=c53522026b7d";
+import { useController } from "../../ui/hooks.js?v=c53522026b7d";
+import { Header } from "../../ui/controls.js?v=c53522026b7d";
+import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=c53522026b7d";
 export function Piano() {
     const model = useController(createPiano), keyboard = useKeyboard(model);
-    return (_jsxs("main", { className: "piano", "aria-labelledby": "title", children: [_jsxs("header", { className: "heading", children: [_jsxs("div", { children: [_jsx("p", { className: "eyebrow", children: "\u041A\u0410\u0420\u041C\u0410\u041D\u041D\u041E\u0415 \u041F\u0418\u0410\u041D\u0418\u041D\u041E" }), _jsx("h1", { id: "title", children: "\u0418\u0433\u0440\u0430\u0439 \u0441 \u043A\u043B\u0430\u0432\u0438\u0430\u0442\u0443\u0440\u044B" })] }), _jsx("span", { className: "sound-mark", "aria-label": "\u0417\u0432\u0443\u043A \u0432\u043A\u043B\u044E\u0447\u0451\u043D", children: "\u266B" })] }), _jsx(FocusIndicator, { compact: false }), _jsx(Keyboard, { binding: keyboard, labelFor: (key) => `${key.note}${key.octave}`, piano: true }), _jsxs("p", { className: "footer", children: ["\u0420\u0430\u0441\u043A\u043B\u0430\u0434\u043A\u0430 \u043D\u0435 \u0432\u043B\u0438\u044F\u0435\u0442 \u043D\u0430 \u043D\u043E\u0442\u044B ", _jsx("span", { "aria-hidden": "true", children: "\u2726" }), " \u041C\u043E\u0436\u043D\u043E \u0438\u0433\u0440\u0430\u0442\u044C \u0430\u043A\u043A\u043E\u0440\u0434\u0430\u043C\u0438"] })] }));
+    return (_jsxs("main", { className: "piano piano-instrument", "aria-labelledby": "title", children: [_jsx(Header, { title: "\u041F\u0438\u0430\u043D\u0438\u043D\u043E", eyebrow: "\u0418\u0413\u0420\u0410\u0419 \u0421 \u041A\u041B\u0410\u0412\u0418\u0410\u0422\u0423\u0420\u042B" }), _jsx("div", { className: "piano-keyboard", children: _jsx(Keyboard, { binding: keyboard, labelFor: (key) => `${key.note}${key.octave}`, piano: true }) }), _jsx("p", { className: "sequencer-hint", children: "Q\u2013] \u00B7 Z\u2013/ \u00B7 \u043B\u044E\u0431\u0430\u044F \u0440\u0430\u0441\u043A\u043B\u0430\u0434\u043A\u0430 \u00B7 \u043C\u043E\u0436\u043D\u043E \u0438\u0433\u0440\u0430\u0442\u044C \u0430\u043A\u043A\u043E\u0440\u0434\u0430\u043C\u0438" })] }));
 }

@@ -1,14 +1,14 @@
-import { readStored, writeStored } from "../../core/storage.js?v=77f7a8b0c2bf";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=77f7a8b0c2bf";
-import { audioContext } from "../../core/dom.js?v=77f7a8b0c2bf";
-import { at, isRecord } from "../../core/guards.js?v=77f7a8b0c2bf";
-import { createObservable } from "../../core/observable.js?v=77f7a8b0c2bf";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=77f7a8b0c2bf";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=77f7a8b0c2bf";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=77f7a8b0c2bf";
-import { sampleStore } from "../../core/sample-store.js?v=77f7a8b0c2bf";
-import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=77f7a8b0c2bf";
-import { createSections, sectionPosition } from "../../core/sections.js?v=77f7a8b0c2bf";
+import { readStored, writeStored } from "../../core/storage.js?v=c53522026b7d";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=c53522026b7d";
+import { audioContext } from "../../core/dom.js?v=c53522026b7d";
+import { at, isRecord } from "../../core/guards.js?v=c53522026b7d";
+import { createObservable } from "../../core/observable.js?v=c53522026b7d";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=c53522026b7d";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=c53522026b7d";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=c53522026b7d";
+import { sampleStore } from "../../core/sample-store.js?v=c53522026b7d";
+import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=c53522026b7d";
+import { createSections, sectionPosition } from "../../core/sections.js?v=c53522026b7d";
 export const TRACKS = [
     "Бочка",
     "Снейр",

@@ -1,38 +1,28 @@
-.sound-mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid #73736d;
-  border-radius: 12px;
-  color: #d6f3ba;
-  font-size: 22px;
+.piano-keyboard {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+  margin-top: 8px;
 }
-
-.footer {
-  margin: 13px 0 0;
-  text-align: center;
-  color: #b2b1aa;
-  font-size: 11px;
+.piano-keyboard .octave {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
-
-.footer span {
-  color: #c4edac;
-  padding: 0 5px;
+.piano-keyboard .octave + .octave {
+  margin-top: 0;
 }
-
-@media (max-width: 400px), (max-height: 400px) {
-  .footer {
-    margin-top: 9px;
-  }
+.piano-keyboard .keyboard {
+  height: auto;
+  flex: 1;
+  min-height: 0;
 }
-
-[data-theme="light"] .footer {
-  color: #646259;
-}
-
-[data-theme="light"] .sound-mark {
-  background: #dceedd;
-  border-color: #abc8ad;
-  color: #2d6038;
+.piano-keyboard .octave-heading {
+  flex-shrink: 0;
+  font-size: 8px;
+  line-height: 10px;
+  letter-spacing: 0.08em;
 }
