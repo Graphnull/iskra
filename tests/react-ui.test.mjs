@@ -116,3 +116,40 @@ test('sample waveform editing updates its marker, clamps at edges and cancels po
   await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Готово').click());assert.equal(closed,1);
   await act(async()=>root.unmount());
 });
+
+test('recorder keeps the recorded waveform in its window until explicit save with settings',async()=>{
+  const {Recorder}=await import('../site/instruments/recorder/recorder-view.js');
+  dom.reconfigure({url:'https://example.org/iskra/?mode=recorder&target=drums&session=test&slot=2'});
+  globalThis.location=window.location;
+  const previousNavigator=Object.getOwnPropertyDescriptor(globalThis,'navigator'),previousRecorder=globalThis.MediaRecorder;
+  Object.defineProperty(globalThis,'navigator',{configurable:true,value:window.navigator});
+  let recorder,tracksStopped=0,closed=0;const sent=[];
+  class Audio{
+    state='running';destination={};currentTime=0;
+    async decodeAudioData(){return {duration:1,numberOfChannels:1,sampleRate:100,getChannelData:()=>new Float32Array(100).fill(.2)};}
+    createBuffer(channels,length,rate){const data=new Float32Array(length);return {numberOfChannels:channels,duration:length/rate,getChannelData:()=>data,copyToChannel:values=>data.set(values)};}
+    async close(){closed++;this.state='closed';}
+  }
+  class MicRecorder{state='inactive';mimeType='audio/webm';constructor(){recorder=this;}start(){this.state='recording';}stop(){this.state='inactive';this.ondataavailable({data:new Blob(['audio'])});this.done=this.onstop();}}
+  window.AudioContext=Audio;globalThis.MediaRecorder=MicRecorder;
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{async getUserMedia(){return {getTracks:()=>[{stop(){tracksStopped++;}}]};}}});
+  const opener={postMessage:(...args)=>sent.push(args)};window.opener=opener;
+  const root=createRoot(rootElement);
+  try{
+    await act(async()=>root.render(createElement(Recorder)));
+    await act(async()=>document.querySelector('.record-large').click());
+    await act(async()=>{document.querySelector('.record-large').click();await recorder.done;});
+    assert.equal(tracksStopped,1);assert(document.querySelector('.sample-wave'));assert.equal(sent.length,0);
+    const gain=document.querySelector('[aria-label="Громкость семпла"]');
+    await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(gain,'2');gain.dispatchEvent(new Event('input',{bubbles:true}));});
+    await act(async()=>document.querySelector('.sample-save').click());
+    assert.equal(sent.length,1);assert.equal(sent[0][0].type,'drum-sample');assert.equal(sent[0][0].session,'test');assert.equal(sent[0][0].settings.gain,2);assert.equal(sent[0][1],location.origin);
+    await act(async()=>window.dispatchEvent(new window.MessageEvent('message',{source:opener,origin:location.origin,data:{type:'sample-received',session:'test'}})));
+    assert(document.querySelector('.sample-wave'));assert.match(document.querySelector('[role=status]').textContent,/Сохранено/);
+  }finally{
+    await act(async()=>root.unmount());assert.equal(closed,1);
+    delete window.AudioContext;delete window.opener;delete navigator.mediaDevices;globalThis.MediaRecorder=previousRecorder;delete globalThis.location;
+    if(previousNavigator)Object.defineProperty(globalThis,'navigator',previousNavigator);else delete globalThis.navigator;
+    dom.reconfigure({url:'https://example.org/iskra/'});
+  }
+});

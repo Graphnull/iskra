@@ -10,6 +10,7 @@ export function SampleEditor({
   onChange,
   onPreview,
   onClose,
+  closeLabel = "Готово",
 }: {
   buffer: AudioBuffer;
   settings: SampleSettings;
@@ -18,6 +19,7 @@ export function SampleEditor({
   onChange(patch: Partial<SampleSettings>): void;
   onPreview(): void;
   onClose(): void;
+  closeLabel?: string;
 }) {
   const peaks = useMemo(() => sampleWaveform(buffer), [buffer]);
   const pointer = useRef<number | null>(null);
@@ -51,7 +53,7 @@ export function SampleEditor({
       <header>
         <strong>Семпл {slot + 1}</strong>
         <button type="button" onClick={onClose}>
-          Готово
+          {closeLabel}
         </button>
       </header>
       <svg

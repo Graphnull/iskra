@@ -1,25 +1,39 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from "react";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=06d05f371f9a";
-import { isRecord } from "../../core/guards.js?v=06d05f371f9a";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=70702a7cb41e";
+import { isRecord } from "../../core/guards.js?v=70702a7cb41e";
+import { audioContext } from "../../core/dom.js?v=70702a7cb41e";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=70702a7cb41e";
+import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=70702a7cb41e";
+import { SampleEditor } from "../../ui/sample-editor.js?v=70702a7cb41e";
 export function Recorder() {
-    const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState("Запись вернётся в инструмент.");
-    const microphone = useRef(null);
+    const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState("Запиши звук, настрой и сохрани в инструмент."), [clip, setClip] = useState(null), [settings, setSettings] = useState({ gain: 1, start: 0 }), [sending, setSending] = useState(false);
+    const microphone = useRef(null), context = useRef(null), voices = useRef(new Set());
+    const parameters = new URLSearchParams(location.search), session = parameters.get("session");
+    const slot = Number(parameters.get("slot") ?? 0);
     useEffect(() => {
-        const parameters = new URLSearchParams(location.search), session = parameters.get("session");
-        const kind = parameters.get("target") === "drums" ? "drum-sample" : "synth-sample";
+        let disposed = false;
         const mic = createMicrophone({
             onState(next, count = 0) {
-                setState(next);
-                setSeconds(count);
+                if (!disposed) {
+                    setState(next);
+                    setSeconds(count);
+                }
             },
             async onBlob(blob) {
-                if (!window.opener || !session)
-                    throw new Error("Открой запись из инструмента.");
-                window.opener.postMessage({ type: kind, session, blob }, location.origin);
-                setStatus("Запись отправлена в инструмент…");
+                if (!context.current)
+                    context.current = audioContext();
+                const buffer = await decodeDrumSample(context.current, blob);
+                if (disposed)
+                    return;
+                setSettings({ gain: 1, start: 0 });
+                setClip({ blob, buffer });
+                setStatus("Настрой звук и нажми «Сохранить в инструмент».");
             },
-            onError: (error) => setStatus(microphoneError(error)),
+            onError: (error) => {
+                if (!disposed)
+                    setStatus(microphoneError(error));
+            },
         });
         microphone.current = mic;
         const message = (event) => {
@@ -29,22 +43,78 @@ export function Recorder() {
                 event.source !== window.opener ||
                 data.session !== session)
                 return;
-            if (data.type === "sample-received")
-                setStatus("Семпл готов. Можно вернуться в инструмент.");
-            if (data.type === "sample-failed" && typeof data.error === "string")
+            if (data.type === "sample-received") {
+                setSending(false);
+                setStatus("Сохранено. Можно вернуться в инструмент.");
+            }
+            if (data.type === "sample-failed" && typeof data.error === "string") {
+                setSending(false);
                 setStatus(data.error);
+            }
         };
-        const pagehide = () => mic.dispose();
-        window.addEventListener("message", message);
-        window.addEventListener("pagehide", pagehide);
-        return () => {
-            microphone.current = null;
+        const dispose = () => {
+            disposed = true;
             mic.dispose();
-            window.removeEventListener("message", message);
-            window.removeEventListener("pagehide", pagehide);
+            for (const voice of voices.current)
+                voice.stop();
+            voices.current.clear();
+            if (context.current && context.current.state !== "closed")
+                void context.current.close();
+            context.current = null;
         };
-    }, []);
-    return (_jsxs("main", { className: "piano recorder-panel", children: [_jsx("p", { className: "eyebrow", children: "\u0421\u0412\u041E\u0419 \u0417\u0412\u0423\u041A" }), _jsx("h1", { children: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u0441\u0435\u043C\u043F\u043B" }), _jsx("p", { children: "\u0417\u0430\u043F\u0438\u0448\u0438 \u0433\u043E\u043B\u043E\u0441 \u0438\u043B\u0438 \u043B\u044E\u0431\u043E\u0439 \u0437\u0432\u0443\u043A \u2014 \u0434\u043E 10 \u0441\u0435\u043A\u0443\u043D\u0434." }), _jsx("button", { className: `record-large${state === "recording" ? " is-recording" : ""}`, type: "button", disabled: state === "requesting" || state === "processing", onClick: () => {
+        window.addEventListener("message", message);
+        window.addEventListener("pagehide", dispose);
+        return () => {
+            dispose();
+            microphone.current = null;
+            window.removeEventListener("message", message);
+            window.removeEventListener("pagehide", dispose);
+        };
+    }, [session]);
+    async function preview() {
+        const active = context.current;
+        if (!clip || !active)
+            return;
+        try {
+            await active.resume();
+            if (context.current !== active)
+                return;
+            const voice = drumSampleVoice(active, active.destination, clip.buffer, active.currentTime, settings);
+            if (voice) {
+                voices.current.add(voice.source);
+                voice.source.onended = () => {
+                    voices.current.delete(voice.source);
+                    voice.source.disconnect();
+                    voice.gain.disconnect();
+                };
+            }
+        }
+        catch (error) {
+            setStatus(microphoneError(error));
+        }
+    }
+    function save() {
+        if (!clip || !window.opener || window.opener.closed || !session) {
+            setStatus("Открой запись из инструмента.");
+            return;
+        }
+        try {
+            window.opener.postMessage({
+                type: parameters.get("target") === "drums"
+                    ? "drum-sample"
+                    : "synth-sample",
+                session,
+                blob: clip.blob,
+                settings,
+            }, location.origin);
+            setSending(true);
+            setStatus("Сохраняю в инструмент…");
+        }
+        catch (error) {
+            setStatus(microphoneError(error));
+        }
+    }
+    return (_jsxs("main", { className: `piano recorder-panel${clip ? " is-editing" : ""}`, children: [_jsx("p", { className: "eyebrow", hidden: !!clip, children: "\u0421\u0412\u041E\u0419 \u0417\u0412\u0423\u041A" }), _jsx("h1", { children: clip ? "Настроить запись" : "Записать семпл" }), _jsx("p", { hidden: !!clip, children: "\u0417\u0430\u043F\u0438\u0448\u0438 \u0433\u043E\u043B\u043E\u0441 \u0438\u043B\u0438 \u043B\u044E\u0431\u043E\u0439 \u0437\u0432\u0443\u043A \u2014 \u0434\u043E 10 \u0441\u0435\u043A\u0443\u043D\u0434." }), _jsx("button", { hidden: !!clip, className: `record-large${state === "recording" ? " is-recording" : ""}`, type: "button", disabled: state === "requesting" || state === "processing", onClick: () => {
                     const mic = microphone.current;
                     if (mic?.recording)
                         mic.stop();
@@ -56,5 +126,13 @@ export function Recorder() {
                         ? "Разреши микрофон…"
                         : state === "processing"
                             ? "Обработка…"
-                            : "● Начать запись" }), _jsx("p", { role: "status", children: status })] }));
+                            : "● Начать запись" }), clip && (_jsxs(_Fragment, { children: [_jsx(SampleEditor, { buffer: clip.buffer, settings: settings, slot: Number.isInteger(slot) && slot >= 0 && slot < 4 ? slot : 0, busy: sending, closeLabel: "\u0417\u0430\u043F\u0438\u0441\u0430\u0442\u044C \u0437\u0430\u043D\u043E\u0432\u043E", onChange: (patch) => setSettings(restoreSampleSettings({ ...settings, ...patch }, clip.buffer.duration)), onPreview: () => void preview(), onClose: () => {
+                            if (sending)
+                                return;
+                            for (const voice of voices.current)
+                                voice.stop();
+                            voices.current.clear();
+                            setClip(null);
+                            setStatus("Запиши новый звук.");
+                        } }), _jsx("button", { className: "sample-save", type: "button", disabled: sending, onClick: save, children: sending ? "Сохраняю…" : "Сохранить в инструмент" })] })), _jsx("p", { role: "status", children: status })] }));
 }

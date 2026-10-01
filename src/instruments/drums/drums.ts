@@ -223,13 +223,18 @@ export function createDrums() {
     status = message;
     observable.notify();
   }
-  async function installSample(slot: number, blob: Blob, persist = true) {
+  async function installSample(
+    slot: number,
+    blob: Blob,
+    persist = true,
+    settings?: unknown,
+  ) {
     const activeLifecycle = lifecycle;
     const buffer = await decodeDrumSample(prepareAudio(), blob);
     if (disposed || activeLifecycle !== lifecycle) return;
     samples[slot] = buffer;
     sampleSettings[slot] = restoreSampleSettings(
-      persist ? null : sampleSettings[slot],
+      persist ? settings : sampleSettings[slot],
       buffer.duration,
     );
     if (persist) {
@@ -272,6 +277,7 @@ export function createDrums() {
     url.searchParams.set("mode", "recorder");
     url.searchParams.set("target", "drums");
     url.searchParams.set("session", session);
+    url.searchParams.set("slot", String(slot));
     const popup = window.open(url.href, "_blank", "popup,width=376,height=376");
     if (popup) {
       recordWindow = false;
@@ -297,7 +303,9 @@ export function createDrums() {
     )
       return;
     try {
-      await installSample(entry.slot, data.blob);
+      await installSample(entry.slot, data.blob, true, data.settings);
+      editingSlot = null;
+      observable.notify();
       if (!disposed)
         entry.popup.postMessage(
           { type: "sample-received", session: data.session },

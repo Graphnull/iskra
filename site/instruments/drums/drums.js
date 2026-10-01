@@ -1,14 +1,14 @@
-import { readStored, writeStored } from "../../core/storage.js?v=06d05f371f9a";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=06d05f371f9a";
-import { audioContext } from "../../core/dom.js?v=06d05f371f9a";
-import { at, isRecord } from "../../core/guards.js?v=06d05f371f9a";
-import { createObservable } from "../../core/observable.js?v=06d05f371f9a";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=06d05f371f9a";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=06d05f371f9a";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=06d05f371f9a";
-import { sampleStore } from "../../core/sample-store.js?v=06d05f371f9a";
-import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=06d05f371f9a";
-import { createSections, sectionPosition } from "../../core/sections.js?v=06d05f371f9a";
+import { readStored, writeStored } from "../../core/storage.js?v=70702a7cb41e";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=70702a7cb41e";
+import { audioContext } from "../../core/dom.js?v=70702a7cb41e";
+import { at, isRecord } from "../../core/guards.js?v=70702a7cb41e";
+import { createObservable } from "../../core/observable.js?v=70702a7cb41e";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=70702a7cb41e";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=70702a7cb41e";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=70702a7cb41e";
+import { sampleStore } from "../../core/sample-store.js?v=70702a7cb41e";
+import { drumTrackForMidi, decodeDrumSample, drumSampleVoice, } from "./drum-samples.js?v=70702a7cb41e";
+import { createSections, sectionPosition } from "../../core/sections.js?v=70702a7cb41e";
 export const TRACKS = [
     "Бочка",
     "Снейр",
@@ -164,13 +164,13 @@ export function createDrums() {
         status = message;
         observable.notify();
     }
-    async function installSample(slot, blob, persist = true) {
+    async function installSample(slot, blob, persist = true, settings) {
         const activeLifecycle = lifecycle;
         const buffer = await decodeDrumSample(prepareAudio(), blob);
         if (disposed || activeLifecycle !== lifecycle)
             return;
         samples[slot] = buffer;
-        sampleSettings[slot] = restoreSampleSettings(persist ? null : sampleSettings[slot], buffer.duration);
+        sampleSettings[slot] = restoreSampleSettings(persist ? settings : sampleSettings[slot], buffer.duration);
         if (persist) {
             editingSlot = slot;
             writeStored(settingsKey, sampleSettings);
@@ -210,6 +210,7 @@ export function createDrums() {
         url.searchParams.set("mode", "recorder");
         url.searchParams.set("target", "drums");
         url.searchParams.set("session", session);
+        url.searchParams.set("slot", String(slot));
         const popup = window.open(url.href, "_blank", "popup,width=376,height=376");
         if (popup) {
             recordWindow = false;
@@ -236,7 +237,9 @@ export function createDrums() {
             !(data.blob instanceof Blob))
             return;
         try {
-            await installSample(entry.slot, data.blob);
+            await installSample(entry.slot, data.blob, true, data.settings);
+            editingSlot = null;
+            observable.notify();
             if (!disposed)
                 entry.popup.postMessage({ type: "sample-received", session: data.session }, location.origin);
         }

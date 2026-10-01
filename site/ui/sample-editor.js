@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useMemo, useRef } from "react";
-import { sampleStartLimit, sampleWaveform } from "../core/sample-edit.js?v=06d05f371f9a";
-export function SampleEditor({ buffer, settings, slot, busy, onChange, onPreview, onClose, }) {
+import { sampleStartLimit, sampleWaveform } from "../core/sample-edit.js?v=70702a7cb41e";
+export function SampleEditor({ buffer, settings, slot, busy, onChange, onPreview, onClose, closeLabel = "Готово", }) {
     const peaks = useMemo(() => sampleWaveform(buffer), [buffer]);
     const pointer = useRef(null);
     const peak = Math.max(0.0001, ...peaks), x = (settings.start / buffer.duration) * 320;
@@ -18,7 +18,7 @@ export function SampleEditor({ buffer, settings, slot, busy, onChange, onPreview
                 start: Math.max(0, Math.min(sampleStartLimit(buffer.duration), ((event.clientX - rect.left) / rect.width) * buffer.duration)),
             });
     }
-    return (_jsxs("section", { className: "sample-editor", "aria-label": `Редактор семпла ${slot + 1}`, children: [_jsxs("header", { children: [_jsxs("strong", { children: ["\u0421\u0435\u043C\u043F\u043B ", slot + 1] }), _jsx("button", { type: "button", onClick: onClose, children: "\u0413\u043E\u0442\u043E\u0432\u043E" })] }), _jsxs("svg", { viewBox: "0 0 320 68", preserveAspectRatio: "none", role: "img", "aria-label": "\u0412\u043E\u043B\u043D\u0430 \u0437\u0430\u043F\u0438\u0441\u0438. \u041A\u0440\u0430\u0441\u043D\u0430\u044F \u043B\u0438\u043D\u0438\u044F \u2014 \u043D\u0430\u0447\u0430\u043B\u043E \u0432\u043E\u0441\u043F\u0440\u043E\u0438\u0437\u0432\u0435\u0434\u0435\u043D\u0438\u044F", className: "sample-wave", onPointerDown: (event) => {
+    return (_jsxs("section", { className: "sample-editor", "aria-label": `Редактор семпла ${slot + 1}`, children: [_jsxs("header", { children: [_jsxs("strong", { children: ["\u0421\u0435\u043C\u043F\u043B ", slot + 1] }), _jsx("button", { type: "button", onClick: onClose, children: closeLabel })] }), _jsxs("svg", { viewBox: "0 0 320 68", preserveAspectRatio: "none", role: "img", "aria-label": "\u0412\u043E\u043B\u043D\u0430 \u0437\u0430\u043F\u0438\u0441\u0438. \u041A\u0440\u0430\u0441\u043D\u0430\u044F \u043B\u0438\u043D\u0438\u044F \u2014 \u043D\u0430\u0447\u0430\u043B\u043E \u0432\u043E\u0441\u043F\u0440\u043E\u0438\u0437\u0432\u0435\u0434\u0435\u043D\u0438\u044F", className: "sample-wave", onPointerDown: (event) => {
                     if (event.button !== 0)
                         return;
                     event.preventDefault();

@@ -39,15 +39,15 @@ test('record opens a separate window, stops pending playback and accepts only it
     model.record(2);assert.equal(opened.searchParams.get('mode'),'recorder');assert.equal(opened.searchParams.get('target'),'drums');
     resume();await pending;assert.equal(model.engine.running,false);
     const session=opened.searchParams.get('session');
-    const deliver=(source,origin)=>window.dispatchEvent(new window.MessageEvent('message',{source,origin,data:{type:'drum-sample',session,blob:new Blob(['recording'])}}));
+    const deliver=(source,origin)=>window.dispatchEvent(new window.MessageEvent('message',{source,origin,data:{type:'drum-sample',session,blob:new Blob(['recording']),settings:{gain:2,start:.04}}}));
     deliver({},location.origin);deliver(popup,'https://wrong.example');await new Promise(r=>setImmediate(r));assert.equal(model.samples[2],null);
     deliver(popup,location.origin);await new Promise(r=>setImmediate(r));
     assert.ok(model.samples[2]);assert.equal(model.samples[0],null);assert.equal(model.samples[3],null);
-    assert.equal(received[0].type,'sample-received');assert.equal(model.editingSlot,2);
+    assert.equal(received[0].type,'sample-received');assert.equal(model.editingSlot,null);
     model.setSampleSettings(2,{gain:3,start:.05});
     assert.deepEqual(createDrums().sampleSettings[2],{gain:3,start:.05});assert.deepEqual(model.sampleSettings[0],{gain:1,start:0});
     model.openSample(null);model.openSample(0);assert.equal(model.editingSlot,null);
-    model.record(2);deliver(popup,location.origin);await new Promise(r=>setImmediate(r));assert.deepEqual(model.sampleSettings[2],{gain:1,start:0});
+    model.record(2);deliver(popup,location.origin);await new Promise(r=>setImmediate(r));assert.deepEqual(model.sampleSettings[2],{gain:2,start:.04});
     window.open=()=>null;model.record(1);assert.equal(model.recordWindow,true);assert.match(model.status,/Разреши всплывающее/);
   }finally{cleanup();window.open=originalOpen;delete window.AudioContext;delete globalThis.location;}
 });
