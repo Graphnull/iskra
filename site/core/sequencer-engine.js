@@ -1,5 +1,5 @@
-import { createScheduler } from "./scheduler.js?v=ec8e4b19492c";
-import { createTransport, DEFAULT_TRANSPORT } from "./transport.js?v=ec8e4b19492c";
+import { createScheduler } from "./scheduler.js?v=27da1cf7fbab";
+import { createTransport, DEFAULT_TRANSPORT } from "./transport.js?v=27da1cf7fbab";
 // Audio timing and pending starts remain independent of component renders.
 export function createSequencerEngine(options) {
     let transport;

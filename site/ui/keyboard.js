@@ -1,7 +1,7 @@
 import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from "react";
-import { bindKeyInput } from "../core/live-keyboard.js?v=ec8e4b19492c";
-import { buildKeyMap, ROWS } from "../core/keyboard-map.js?v=ec8e4b19492c";
+import { bindKeyInput } from "../core/live-keyboard.js?v=27da1cf7fbab";
+import { buildKeyMap, ROWS } from "../core/keyboard-map.js?v=27da1cf7fbab";
 const KEYS = buildKeyMap();
 export function useKeyboard(options) {
     const current = useRef(options);

@@ -1,6 +1,6 @@
-import { readStored, writeStored } from "./storage.js?v=ec8e4b19492c";
-import { widgetStorageKey } from "./widget-storage.js?v=ec8e4b19492c";
-import { isRecord, isInteger, at } from "./guards.js?v=ec8e4b19492c";
+import { readStored, writeStored } from "./storage.js?v=27da1cf7fbab";
+import { widgetStorageKey } from "./widget-storage.js?v=27da1cf7fbab";
+import { isRecord, isInteger, at } from "./guards.js?v=27da1cf7fbab";
 export const SECTION_COUNT = 4;
 export const SECTION_STEPS = 16;
 export function sectionPosition(step) {

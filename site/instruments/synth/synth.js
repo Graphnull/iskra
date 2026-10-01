@@ -1,12 +1,12 @@
-import { audioContext as createAudioContext } from "../../core/dom.js?v=ec8e4b19492c";
-import { at } from "../../core/guards.js?v=ec8e4b19492c";
-import { createObservable } from "../../core/observable.js?v=ec8e4b19492c";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=ec8e4b19492c";
-import { isSynthSound, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=ec8e4b19492c";
-import { readStored, writeStored } from "../../core/storage.js?v=ec8e4b19492c";
-import { synthVoice, releaseVoice, updateSynthVoice } from "./synth-audio.js?v=ec8e4b19492c";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=ec8e4b19492c";
-import { noteLabel } from "../../core/scales.js?v=ec8e4b19492c";
+import { audioContext as createAudioContext } from "../../core/dom.js?v=27da1cf7fbab";
+import { at } from "../../core/guards.js?v=27da1cf7fbab";
+import { createObservable } from "../../core/observable.js?v=27da1cf7fbab";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=27da1cf7fbab";
+import { isSynthSound, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=27da1cf7fbab";
+import { readStored, writeStored } from "../../core/storage.js?v=27da1cf7fbab";
+import { synthVoice, releaseVoice, updateSynthVoice } from "./synth-audio.js?v=27da1cf7fbab";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=27da1cf7fbab";
+import { noteLabel } from "../../core/scales.js?v=27da1cf7fbab";
 export function createSynth() {
     const observable = createObservable(), stateKey = widgetStorageKey("synth-sequence-v1");
     const state = restoreSynth(readStored(stateKey, null, {

@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from "react";
-import { FocusIndicator } from "./focus.js?v=ec8e4b19492c";
+import { FocusIndicator } from "./focus.js?v=27da1cf7fbab";
 export function Header({ title, eyebrow, view, onToggle, alternateLabel = "Клавиши", }) {
     return (_jsxs("header", { className: "heading", children: [_jsxs("div", { children: [eyebrow && _jsx("p", { className: "eyebrow", children: eyebrow }), _jsx("h1", { id: "title", children: title })] }), _jsxs("div", { className: "live-actions", children: [_jsx(FocusIndicator, {}), onToggle && (_jsx("button", { type: "button", className: "view-toggle", "aria-pressed": view !== "grid", onClick: onToggle, children: view === "grid" ? alternateLabel : "Сетка" }))] })] }));
 }
@@ -16,7 +16,7 @@ export function NumberControl({ value, onChange, label, min, max, }) {
     };
     return (_jsx("input", { type: "number", min: min, max: max, value: text, "aria-label": label, onChange: (event) => setText(event.target.value), onBlur: commit, onKeyDown: (event) => {
             if (event.key === "Enter") {
-                commit();
+                event.preventDefault();
                 event.currentTarget.blur();
             }
         } }));

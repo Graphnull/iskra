@@ -77,7 +77,7 @@ export function NumberControl({
       onBlur={commit}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
-          commit();
+          event.preventDefault();
           event.currentTarget.blur();
         }
       }}

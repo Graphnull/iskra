@@ -69,5 +69,6 @@ test('numeric controls accept zero and synchronize tempo from another widget',as
   await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'0');input.dispatchEvent(new Event('input',{bubbles:true}));});
   await act(async()=>{input.focus();input.blur();});assert.deepEqual(changes,[0]);
   await act(async()=>root.render(createElement(NumberControl,{value:2,min:-2,max:2,label:'Октава',onChange:value=>changes.push(value)})));assert.equal(input.value,'2');
+  await act(async()=>{input.focus();input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',code:'Enter',bubbles:true,cancelable:true}));});assert.deepEqual(changes,[0,2]);
   await act(async()=>root.unmount());
 });
