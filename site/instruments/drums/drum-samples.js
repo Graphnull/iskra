@@ -1,6 +1,6 @@
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=6d9c10cb8199";
-import { drumForMidi } from "./drum-notes.js?v=6d9c10cb8199";
-import { sampleBounds } from "../../core/microphone.js?v=6d9c10cb8199";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=4a0ac5e04eca";
+import { drumForMidi } from "./drum-notes.js?v=4a0ac5e04eca";
+import { sampleBounds } from "../../core/microphone.js?v=4a0ac5e04eca";
 export const SAMPLE_BINDINGS = [
     { midi: 72, note: "C5", key: "Q" },
     { midi: 74, note: "D5", key: "W" },

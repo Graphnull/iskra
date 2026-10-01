@@ -51,3 +51,10 @@ test('record opens a separate window, stops pending playback and accepts only it
     window.open=()=>null;model.record(1);assert.equal(model.recordWindow,true);assert.match(model.status,/Разреши всплывающее/);
   }finally{cleanup();window.open=originalOpen;delete window.AudioContext;delete globalThis.location;}
 });
+
+test('filter controls enable an audible range, retain depth in manual mode and persist independently',()=>{
+  clear();const model=createSynth();model.setFilterControl('adsr');
+  assert.equal(model.state.cutoff,400);assert.equal(model.state.filterAmount,.8);
+  model.setFilterType('notch');model.setParameter('cutoff',80);model.setFilterControl('manual');
+  const restored=createSynth();assert.equal(restored.state.filterType,'notch');assert.equal(restored.state.filterControl,'manual');assert.equal(restored.state.cutoff,80);assert.equal(restored.state.filterAmount,.8);
+});

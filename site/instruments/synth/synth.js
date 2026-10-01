@@ -1,12 +1,12 @@
-import { audioContext as createAudioContext } from "../../core/dom.js?v=6d9c10cb8199";
-import { at } from "../../core/guards.js?v=6d9c10cb8199";
-import { createObservable } from "../../core/observable.js?v=6d9c10cb8199";
-import { createSequencerEngine } from "../../core/sequencer-engine.js?v=6d9c10cb8199";
-import { isSynthSound, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=6d9c10cb8199";
-import { readStored, writeStored } from "../../core/storage.js?v=6d9c10cb8199";
-import { synthVoice, releaseVoice, updateSynthVoice } from "./synth-audio.js?v=6d9c10cb8199";
-import { widgetStorageKey } from "../../core/widget-storage.js?v=6d9c10cb8199";
-import { noteLabel } from "../../core/scales.js?v=6d9c10cb8199";
+import { audioContext as createAudioContext } from "../../core/dom.js?v=4a0ac5e04eca";
+import { at } from "../../core/guards.js?v=4a0ac5e04eca";
+import { createObservable } from "../../core/observable.js?v=4a0ac5e04eca";
+import { createSequencerEngine } from "../../core/sequencer-engine.js?v=4a0ac5e04eca";
+import { isSynthSound, isFilterType, isWaveform, DEFAULT_WAVE, synthPosition, restoreSynth, noteAt, putNote, activeSynthNotes, } from "./synth-sequence.js?v=4a0ac5e04eca";
+import { readStored, writeStored } from "../../core/storage.js?v=4a0ac5e04eca";
+import { synthVoice, releaseVoice, updateSynthVoice, updateVoiceFilter, } from "./synth-audio.js?v=4a0ac5e04eca";
+import { widgetStorageKey } from "../../core/widget-storage.js?v=4a0ac5e04eca";
+import { noteLabel } from "../../core/scales.js?v=4a0ac5e04eca";
 export function createSynth() {
     const observable = createObservable(), stateKey = widgetStorageKey("synth-sequence-v1");
     const state = restoreSynth(readStored(stateKey, null, {
@@ -159,6 +159,41 @@ export function createSynth() {
                 state.length = value;
                 save();
             }
+        },
+        setFilterType(value) {
+            if (!isFilterType(value))
+                return;
+            state.filterType = value;
+            if (context)
+                for (const voice of voices)
+                    updateVoiceFilter(context, voice, state.filterType, state.filterControl, state.filterAmount);
+            save();
+        },
+        setFilterControl(value) {
+            if (value !== "manual" && value !== "adsr")
+                return;
+            state.filterControl = value;
+            if (value === "adsr" && state.filterAmount === 0) {
+                state.filterAmount = 0.8;
+                state.cutoff = Math.min(state.cutoff, 400);
+                if (context)
+                    for (const voice of voices)
+                        updateSynthVoice(context, voice, "cutoff", state.cutoff);
+            }
+            if (context)
+                for (const voice of voices)
+                    updateVoiceFilter(context, voice, state.filterType, state.filterControl, state.filterAmount);
+            save();
+        },
+        filterFrequency() {
+            if (!context)
+                return state.cutoff;
+            let latest;
+            for (const voice of voices)
+                if (voice.time <= context.currentTime &&
+                    (!latest || latest.time < voice.time))
+                    latest = voice;
+            return latest?.filter.frequency.value ?? state.cutoff;
         },
         setParameter(key, value) {
             state[key] = value;

@@ -11,6 +11,17 @@ export interface SynthNote {
   start: number;
   length: number;
 }
+export const FILTER_TYPES = {
+  lowpass: "Низкие · LP",
+  highpass: "Высокие · HP",
+  bandpass: "Полоса · BP",
+  notch: "Вырез · Notch",
+} as const;
+export type FilterType = keyof typeof FILTER_TYPES;
+export type FilterControl = "manual" | "adsr";
+export function isFilterType(value: unknown): value is FilterType {
+  return typeof value === "string" && Object.hasOwn(FILTER_TYPES, value);
+}
 export interface SynthParameters extends ADSR {
   cutoff: number;
   resonance: number;
@@ -21,6 +32,8 @@ export interface SynthParameters extends ADSR {
   filterAmount: number;
 }
 export interface SynthState extends SynthParameters {
+  filterType: FilterType;
+  filterControl: FilterControl;
   version: 2;
   selected: number;
   octave: number;
@@ -78,7 +91,7 @@ export function putNote(
   ];
 }
 const RANGES: readonly (readonly [keyof SynthParameters, number, number])[] = [
-  ["cutoff", 200, 10000],
+  ["cutoff", 20, 10000],
   ["resonance", 0, 12],
   ["attack", 0.003, 2],
   ["decay", 0.02, 8],
@@ -103,6 +116,8 @@ export function restoreSynth(
   { strict = false }: { strict?: boolean } = {},
 ): SynthState | null {
   const empty = (): SynthState => ({
+    filterType: "lowpass",
+    filterControl: "manual",
     version: 2,
     selected: 0,
     octave: 0,
@@ -192,6 +207,15 @@ export function restoreSynth(
     const value = saved[key];
     if (isNumber(value) && value >= min && value <= max) state[key] = value;
   }
+  state.filterType = isFilterType(saved.filterType)
+    ? saved.filterType
+    : "lowpass";
+  state.filterControl =
+    saved.filterControl === "manual" || saved.filterControl === "adsr"
+      ? saved.filterControl
+      : state.filterAmount > 0
+        ? "adsr"
+        : "manual";
   if (state.sound === "bass" && !isNumber(saved.attack))
     Object.assign(state, { attack: 0.003, decay: 4, sustain: 0.083 });
   return state;

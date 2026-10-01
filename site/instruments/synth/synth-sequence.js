@@ -1,8 +1,17 @@
-import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=6d9c10cb8199";
-import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=6d9c10cb8199";
+import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=4a0ac5e04eca";
+import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=4a0ac5e04eca";
 export const SYNTH_STEPS = SECTION_STEPS;
 export const SYNTH_ROWS = 16;
 export const synthPosition = sectionPosition;
+export const FILTER_TYPES = {
+    lowpass: "Низкие · LP",
+    highpass: "Высокие · HP",
+    bandpass: "Полоса · BP",
+    notch: "Вырез · Notch",
+};
+export function isFilterType(value) {
+    return typeof value === "string" && Object.hasOwn(FILTER_TYPES, value);
+}
 export const WAVEFORMS = [
     "sine",
     "triangle",
@@ -35,7 +44,7 @@ export function putNote(notes, row, start, length) {
     ];
 }
 const RANGES = [
-    ["cutoff", 200, 10000],
+    ["cutoff", 20, 10000],
     ["resonance", 0, 12],
     ["attack", 0.003, 2],
     ["decay", 0.02, 8],
@@ -49,6 +58,8 @@ const RANGES = [
 ];
 export function restoreSynth(saved, { strict = false } = {}) {
     const empty = () => ({
+        filterType: "lowpass",
+        filterControl: "manual",
         version: 2,
         selected: 0,
         octave: 0,
@@ -123,6 +134,15 @@ export function restoreSynth(saved, { strict = false } = {}) {
         if (isNumber(value) && value >= min && value <= max)
             state[key] = value;
     }
+    state.filterType = isFilterType(saved.filterType)
+        ? saved.filterType
+        : "lowpass";
+    state.filterControl =
+        saved.filterControl === "manual" || saved.filterControl === "adsr"
+            ? saved.filterControl
+            : state.filterAmount > 0
+                ? "adsr"
+                : "manual";
     if (state.sound === "bass" && !isNumber(saved.attack))
         Object.assign(state, { attack: 0.003, decay: 4, sustain: 0.083 });
     return state;

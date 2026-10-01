@@ -123,7 +123,7 @@ test('editing a held voice keeps its oscillator alive and the new release is use
 });
 
 test('filter ADSR schedules its own attack, sustain and release without stopping a held source',()=>{
-  const context=audioMock(),state={...restoreSynth(null),cutoff:400,filterAmount:1,filterAttack:.2,filterDecay:.3,filterSustain:.5,filterRelease:2};
+  const context=audioMock(),state={...restoreSynth(null),cutoff:400,filterControl:"adsr",filterAmount:1,filterAttack:.2,filterDecay:.3,filterSustain:.5,filterRelease:2};
   const voice=synthVoice(context,{},state,60,2,null,true);
   assert.deepEqual(voice.filter.frequency.calls.slice(0,3),[['set',400,2],['ramp',12800,2.2],['ramp',400*Math.sqrt(32),2.5]]);
   context.currentTime=2.1;
@@ -144,6 +144,31 @@ test('filter settings restore independently, old saves keep their sound and freq
   assert.equal(restoreSynth({...state,filterSustain:-1,filterAmount:Infinity}).filterSustain,.7);
   const saved={...state,filterAmount:.8,filterSustain:.3};assert.deepEqual(restoreSynth(saved),saved);
   const context=audioMock();context.sampleRate=22050;
-  const voice=synthVoice(context,{}, {...state,cutoff:10000,filterAmount:1},60,2);
+  const voice=synthVoice(context,{}, {...state,cutoff:10000,filterControl:"adsr",filterAmount:1},60,2);
   assert.ok(voice.filter.frequency.calls.every(c=>c[1]<=context.sampleRate*.475));
+});
+
+test('all four filter types persist and manual mode bypasses ADSR even at full depth',()=>{
+  for(const filterType of ['lowpass','highpass','bandpass','notch']){
+    const settings={...restoreSynth(null),filterType,filterControl:'manual',filterAmount:1,cutoff:300};
+    assert.equal(restoreSynth(settings).filterType,filterType);
+    const voice=synthVoice(audioMock(),{},settings,60,2,null,true);
+    assert.equal(voice.filter.type,filterType);assert.equal(voice.filterAmount,0);
+    assert.deepEqual(voice.filter.frequency.calls,[['set',300,2]]);
+  }
+  const old={...restoreSynth(null),filterAmount:.8};delete old.filterType;delete old.filterControl;
+  assert.equal(restoreSynth(old).filterControl,'adsr');
+  assert.equal(restoreSynth({...old,filterType:'bad'}).filterType,'lowpass');
+});
+test('switching a held filter between ADSR and manual cancels frequency automation without stopping sound',async()=>{
+  const {updateVoiceFilter}=await import('../site/instruments/synth/synth-audio.js');
+  const ctx=audioMock(),settings={...restoreSynth(null),cutoff:300,filterControl:'adsr',filterAmount:1,filterAttack:.5,filterDecay:.5};
+  const voice=synthVoice(ctx,{},settings,60,2,null,true);
+  ctx.currentTime=2.1;updateVoiceFilter(ctx,voice,'highpass','manual',1);
+  assert.equal(voice.filter.type,'highpass');assert.equal(voice.filterAmount,0);
+  assert.deepEqual(voice.filter.frequency.calls.at(-1),['target',300,2.1,.02]);
+  updateSynthVoice(ctx,voice,'filterAmount',.5);assert.equal(voice.filterAmount,0);
+  updateVoiceFilter(ctx,voice,'bandpass','adsr',.5);
+  assert.equal(voice.filterAmount,.5);assert.equal(voice.source.stopped,undefined);
+  assert.equal(voice.filter.frequency.calls.at(-1)[0],'ramp');
 });

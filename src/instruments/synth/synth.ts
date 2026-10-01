@@ -8,6 +8,7 @@ import type { SynthVoice } from "./synth-audio.js";
 import type { SynthParameters } from "./synth-sequence.js";
 import {
   isSynthSound,
+  isFilterType,
   isWaveform,
   DEFAULT_WAVE,
   synthPosition,
@@ -17,7 +18,12 @@ import {
   activeSynthNotes,
 } from "./synth-sequence.js";
 import { readStored, writeStored } from "../../core/storage.js";
-import { synthVoice, releaseVoice, updateSynthVoice } from "./synth-audio.js";
+import {
+  synthVoice,
+  releaseVoice,
+  updateSynthVoice,
+  updateVoiceFilter,
+} from "./synth-audio.js";
 import { widgetStorageKey } from "../../core/widget-storage.js";
 import { noteLabel } from "../../core/scales.js";
 export function createSynth() {
@@ -188,6 +194,52 @@ export function createSynth() {
         state.length = value;
         save();
       }
+    },
+    setFilterType(value: string) {
+      if (!isFilterType(value)) return;
+      state.filterType = value;
+      if (context)
+        for (const voice of voices)
+          updateVoiceFilter(
+            context,
+            voice,
+            state.filterType,
+            state.filterControl,
+            state.filterAmount,
+          );
+      save();
+    },
+    setFilterControl(value: string) {
+      if (value !== "manual" && value !== "adsr") return;
+      state.filterControl = value;
+      if (value === "adsr" && state.filterAmount === 0) {
+        state.filterAmount = 0.8;
+        state.cutoff = Math.min(state.cutoff, 400);
+        if (context)
+          for (const voice of voices)
+            updateSynthVoice(context, voice, "cutoff", state.cutoff);
+      }
+      if (context)
+        for (const voice of voices)
+          updateVoiceFilter(
+            context,
+            voice,
+            state.filterType,
+            state.filterControl,
+            state.filterAmount,
+          );
+      save();
+    },
+    filterFrequency() {
+      if (!context) return state.cutoff;
+      let latest: SynthVoice | undefined;
+      for (const voice of voices)
+        if (
+          voice.time <= context.currentTime &&
+          (!latest || latest.time < voice.time)
+        )
+          latest = voice;
+      return latest?.filter.frequency.value ?? state.cutoff;
     },
     setParameter(key: keyof SynthParameters, value: number) {
       state[key] = value;

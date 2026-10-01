@@ -29,7 +29,7 @@ test('React rerenders preserve held notes, range focus and keyboard listeners ar
   await act(async()=>root.render(createElement(StrictMode,null,createElement(View,{label:'C5'}))));
   assert.equal(document.querySelector('[data-code="KeyZ"]'),originalKey);
   assert.deepEqual(released,[]);assert(originalKey.classList.contains('is-active'));
-  const range=document.querySelector('input[type="range"]');range.focus();
+  const range=document.querySelector('[aria-label="Громкость: Сустейн"]');range.focus();
   await act(async()=>key('keyup','KeyZ',range));assert.deepEqual(released,[1]);
   await act(async()=>key('keydown','KeyZ',range));assert.equal(starts,2);
   await act(async()=>root.unmount());assert.deepEqual(released,[1,2]);
@@ -74,7 +74,7 @@ test('numeric controls accept zero and synchronize tempo from another widget',as
 });
 
 test('ADSR dragging preserves handles and held notes, cancels gestures and isolates filter changes',async()=>{
-  const root=createRoot(rootElement),state=restoreSynth(null),changes=[],released=[];
+  const root=createRoot(rootElement),state={...restoreSynth(null),filterControl:'adsr'},changes=[],released=[];
   function View(){
     const binding=useKeyboard({onNoteOn:()=>1,onNoteOff:v=>released.push(v)});
     return createElement(SynthPanel,{state,held:[...binding.active],hidden:false,onChange(key,value){state[key]=value;changes.push(key);root.render(createElement(View));}});
@@ -167,4 +167,23 @@ test('empty sample name opens the recording window for its own track',async()=>{
     await act(async()=>button.click());
     assert.equal(opened.searchParams.get('mode'),'recorder');assert.equal(opened.searchParams.get('slot'),'2');
   }finally{await act(async()=>root.unmount());window.open=previousOpen;delete globalThis.location;}
+});
+
+test('volume tab has no frequency settings; filter offers manual or ADSR with live frequency',async()=>{
+  const root=createRoot(rootElement),state=restoreSynth(null),frames=new Map();let id=0,canceled=0;
+  globalThis.requestAnimationFrame=callback=>{frames.set(++id,callback);return id;};globalThis.cancelAnimationFrame=key=>{frames.delete(key);canceled++;};
+  const render=()=>root.render(createElement(SynthPanel,{state,held:[],hidden:false,readFrequency:()=>1234,onChange(key,value){state[key]=value;render();},onFilterType(value){state.filterType=value;render();},onFilterControl(value){state.filterControl=value;render();}}));
+  try{
+    await act(async()=>render());assert.equal(document.querySelector('input[type=range]'),null);
+    await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Фильтр').click());
+    assert.equal(document.querySelector('[aria-label="Частота фильтра"]').disabled,false);
+    const type=document.querySelector('[aria-label="Тип фильтра"]');
+    await act(async()=>{type.value='notch';type.dispatchEvent(new Event('change',{bubbles:true}));});assert.equal(state.filterType,'notch');
+    const mode=document.querySelector('[aria-label="Управление фильтром"]');
+    await act(async()=>{mode.value='adsr';mode.dispatchEvent(new Event('change',{bubbles:true}));});
+    await act(async()=>{const [key,callback]=frames.entries().next().value;frames.delete(key);callback();});
+    const live=document.querySelector('[aria-label="Текущая частота фильтра"]');assert.equal(live.disabled,true);assert.equal(live.getAttribute('aria-valuetext'),'1234 Гц');
+    assert(document.querySelector('[aria-label="Фильтр: Атака"]'));
+    await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Громкость').click());assert.equal(document.querySelector('input[type=range]'),null);assert.ok(canceled>0);
+  }finally{await act(async()=>root.unmount());delete globalThis.requestAnimationFrame;delete globalThis.cancelAnimationFrame;}
 });

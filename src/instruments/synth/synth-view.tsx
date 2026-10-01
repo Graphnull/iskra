@@ -89,6 +89,9 @@ export function Synth() {
           model.labelFor,
         )}
         onChange={model.setParameter}
+        onFilterType={model.setFilterType}
+        onFilterControl={model.setFilterControl}
+        readFrequency={model.filterFrequency}
         hidden={!panel}
       />
       <NoteGrid

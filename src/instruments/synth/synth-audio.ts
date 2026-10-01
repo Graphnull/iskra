@@ -3,6 +3,8 @@ import type {
   SynthSound,
   SynthParameters,
   Waveform,
+  FilterType,
+  FilterControl,
 } from "./synth-sequence.js";
 import { DEFAULT_WAVE } from "./synth-sequence.js";
 
@@ -10,6 +12,8 @@ interface OscillatorSettings extends Partial<SynthParameters> {
   sound: SynthSound;
   waveform?: Waveform;
   cutoff: number;
+  filterType?: FilterType;
+  filterControl?: FilterControl;
 }
 interface SampleSettings extends Partial<SynthParameters> {
   sound: "sample";
@@ -17,6 +21,8 @@ interface SampleSettings extends Partial<SynthParameters> {
   root: number;
   loop: boolean;
   cutoff: number;
+  filterType?: FilterType;
+  filterControl?: FilterControl;
 }
 type VoiceSettings = OscillatorSettings | SampleSettings;
 export interface SynthVoice {
@@ -30,6 +36,8 @@ export interface SynthVoice {
   released: boolean;
   cutoff: number;
   filterAmount: number;
+  filterDepth: number;
+  filterControl: FilterControl;
   filterEnvelope: ADSR;
   filterMax: number;
 }
@@ -148,9 +156,12 @@ export function synthVoice(
       : settings.sound === "sample"
         ? 0.45
         : 0.18;
-  filter.type = "lowpass";
+  filter.type = settings.filterType ?? "lowpass";
   filter.frequency.value = settings.cutoff;
-  filter.Q.value = settings.resonance ?? 0.7;
+  filter.Q.value =
+    filter.type === "bandpass" || filter.type === "notch"
+      ? Math.max(0.1, settings.resonance ?? 0.7)
+      : (settings.resonance ?? 0.7);
   gain.gain.setValueAtTime(0.0001, time);
   if (
     settings.attack !== undefined &&
@@ -181,7 +192,12 @@ export function synthVoice(
     release: settings.release,
     released: false,
     cutoff: settings.cutoff,
-    filterAmount: settings.filterAmount ?? 0,
+    filterAmount:
+      settings.filterControl === "manual" ? 0 : (settings.filterAmount ?? 0),
+    filterDepth: settings.filterAmount ?? 0,
+    filterControl:
+      settings.filterControl ??
+      ((settings.filterAmount ?? 0) > 0 ? "adsr" : "manual"),
     filterEnvelope: {
       attack: settings.filterAttack ?? 0.015,
       decay: settings.filterDecay ?? 0.4,
@@ -194,6 +210,29 @@ export function synthVoice(
   if (duration !== null)
     releaseVoice(context, voice, time + Math.max(0.025, duration));
   return voice;
+}
+export function updateVoiceFilter(
+  context: AudioContext,
+  voice: SynthVoice,
+  type: FilterType,
+  control: FilterControl,
+  depth: number,
+): void {
+  voice.filter.type = type;
+  if (type === "bandpass" || type === "notch")
+    voice.filter.Q.value = Math.max(0.1, voice.filter.Q.value);
+  if (voice.released) return;
+  const at = context.currentTime,
+    param = voice.filter.frequency;
+  if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(at);
+  else {
+    param.cancelScheduledValues(at);
+    param.setValueAtTime(filterValue(voice, at), at);
+  }
+  voice.filterControl = control;
+  voice.filterDepth = depth;
+  voice.filterAmount = control === "adsr" ? depth : 0;
+  scheduleFilter(voice, at);
 }
 export function updateSynthVoice(
   context: AudioContext,
@@ -235,12 +274,21 @@ export function updateSynthVoice(
       frequency.setValueAtTime(filterValue(voice, at), at);
     }
     if (key === "cutoff") voice.cutoff = value;
-    else if (key === "filterAmount") voice.filterAmount = value;
-    else if (key in filterKeys)
+    else if (key === "filterAmount") {
+      voice.filterDepth = value;
+      voice.filterAmount = voice.filterControl === "adsr" ? value : 0;
+    } else if (key in filterKeys)
       voice.filterEnvelope[filterKeys[key as keyof typeof filterKeys]] = value;
     scheduleFilter(voice, at);
   }
-  if (key === "resonance") voice.filter.Q.setTargetAtTime(value, at, 0.02);
+  if (key === "resonance")
+    voice.filter.Q.setTargetAtTime(
+      voice.filter.type === "bandpass" || voice.filter.type === "notch"
+        ? Math.max(0.1, value)
+        : value,
+      at,
+      0.02,
+    );
   if (key === "release" && !voice.released) voice.release = value;
   if (key === "sustain" && voice.live && !voice.released) {
     const gain = voice.gain.gain;

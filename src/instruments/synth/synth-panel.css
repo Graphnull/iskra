@@ -1,99 +1,18 @@
 .synth-panel {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   padding: 6px;
   border: 1px solid #60605a;
   border-radius: 12px;
   background: #222220;
 }
 
-.synth-knob {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 0;
-  font-size: 10px;
-  color: #bcbab2;
-}
-
-.knob-dial {
-  position: relative;
-  display: block;
-  width: clamp(24px, 7vh, 48px);
-  height: auto;
-  aspect-ratio: 1;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 25%, #55554f, #292927 75%);
-  border: 1px solid #77746b;
-  box-shadow: 0 2px 4px #0005;
-}
-
-.knob-pointer {
-  position: absolute;
-  inset: 4px;
-  transform: rotate(var(--angle));
-  pointer-events: none;
-}
-
-.knob-pointer::before {
-  content: "";
-  display: block;
-  width: 3px;
-  height: 30%;
-  margin: 0 auto;
-  background: #dc827a;
-  border-radius: 2px;
-}
-
-.knob-dial input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: ew-resize;
-}
-
-.knob-dial:focus-within {
-  outline: 2px solid #dc827a;
-  outline-offset: 2px;
-}
-
-.synth-knob output {
-  color: #f2f1ea;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-}
-
 [data-theme="light"] .synth-panel {
   background: #eeede8;
   border-color: #bdb9ad;
-}
-
-[data-theme="light"] .synth-knob {
-  color: #646259;
-}
-
-[data-theme="light"] .synth-knob output {
-  color: #39382f;
-}
-
-[data-theme="light"] .knob-dial {
-  background: radial-gradient(circle at 35% 25%, #fff, #d2cec2 75%);
-  border-color: #9f9b8e;
-  box-shadow: 0 2px 4px #5553;
-}
-
-.synth-panel {
-  grid-template-rows: 22px minmax(90px, 1fr) 62px;
 }
 
 .envelope-tabs {
@@ -146,4 +65,84 @@
   background: #f2d7d1;
   border-color: #a85f57;
   color: #59322c;
+}
+
+.synth-panel .envelope-tabs {
+  flex-shrink: 0;
+}
+.synth-panel .adsr-editor {
+  flex: 1;
+  min-height: 65px;
+}
+.filter-choice {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.filter-choice select {
+  width: 50%;
+  min-width: 0;
+  height: 24px;
+  border: 1px solid #60605a;
+  border-radius: 6px;
+  background: #2b2b29;
+  color: #f2f1ea;
+  font: inherit;
+  font-size: 10px;
+}
+.filter-frequency,
+.filter-parameters label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px;
+  font-size: 10px;
+}
+.filter-frequency input,
+.filter-parameters input {
+  grid-column: 1/-1;
+  width: 100%;
+  margin: 0;
+  accent-color: #dc827a;
+  height: 14px;
+}
+.filter-frequency output,
+.filter-parameters output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.filter-frequency input:disabled {
+  opacity: 1;
+}
+.filter-parameters {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.filter-parameters label {
+  flex: 1;
+  min-width: 0;
+}
+.filter-description {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 12px;
+  text-align: center;
+  color: #bcbab2;
+}
+.filter-caption {
+  margin: 0;
+  font-size: 8px;
+  line-height: 10px;
+  color: #bcbab2;
+}
+[data-theme="light"] .filter-choice select {
+  background: #fcfbf7;
+  color: #39382f;
+  border-color: #bdb9ad;
+}
+[data-theme="light"] .filter-description,
+[data-theme="light"] .filter-caption {
+  color: #646259;
 }
