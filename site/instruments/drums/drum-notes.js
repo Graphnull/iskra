@@ -1,4 +1,4 @@
-import { at } from "../../core/guards.js?v=70702a7cb41e";
+import { at } from "../../core/guards.js?v=6d9c10cb8199";
 // Both sequenced rows and live piano notes address the same eight sounds.
 export const DRUM_BINDINGS = [
     { midi: 60, note: "C4", key: "Z" },

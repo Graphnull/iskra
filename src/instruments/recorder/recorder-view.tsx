@@ -60,6 +60,7 @@ export function Recorder() {
       if (data.type === "sample-received") {
         setSending(false);
         setStatus("Сохранено. Можно вернуться в инструмент.");
+        window.close();
       }
       if (data.type === "sample-failed" && typeof data.error === "string") {
         setSending(false);

@@ -117,13 +117,14 @@ test('sample waveform editing updates its marker, clamps at edges and cancels po
   await act(async()=>root.unmount());
 });
 
-test('recorder keeps the recorded waveform in its window until explicit save with settings',async()=>{
+test('recorder edits in its window and closes only after save confirmation',async()=>{
   const {Recorder}=await import('../site/instruments/recorder/recorder-view.js');
   dom.reconfigure({url:'https://example.org/iskra/?mode=recorder&target=drums&session=test&slot=2'});
   globalThis.location=window.location;
   const previousNavigator=Object.getOwnPropertyDescriptor(globalThis,'navigator'),previousRecorder=globalThis.MediaRecorder;
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:window.navigator});
-  let recorder,tracksStopped=0,closed=0;const sent=[];
+  let recorder,tracksStopped=0,closed=0,windowClosed=0;const sent=[];
+  const previousClose=window.close;window.close=()=>windowClosed++;
   class Audio{
     state='running';destination={};currentTime=0;
     async decodeAudioData(){return {duration:1,numberOfChannels:1,sampleRate:100,getChannelData:()=>new Float32Array(100).fill(.2)};}
@@ -145,11 +146,25 @@ test('recorder keeps the recorded waveform in its window until explicit save wit
     await act(async()=>document.querySelector('.sample-save').click());
     assert.equal(sent.length,1);assert.equal(sent[0][0].type,'drum-sample');assert.equal(sent[0][0].session,'test');assert.equal(sent[0][0].settings.gain,2);assert.equal(sent[0][1],location.origin);
     await act(async()=>window.dispatchEvent(new window.MessageEvent('message',{source:opener,origin:location.origin,data:{type:'sample-received',session:'test'}})));
-    assert(document.querySelector('.sample-wave'));assert.match(document.querySelector('[role=status]').textContent,/Сохранено/);
+    assert.equal(windowClosed,1);assert.match(document.querySelector('[role=status]').textContent,/Сохранено/);
   }finally{
     await act(async()=>root.unmount());assert.equal(closed,1);
-    delete window.AudioContext;delete window.opener;delete navigator.mediaDevices;globalThis.MediaRecorder=previousRecorder;delete globalThis.location;
+    window.close=previousClose;delete window.AudioContext;delete window.opener;delete navigator.mediaDevices;globalThis.MediaRecorder=previousRecorder;delete globalThis.location;
     if(previousNavigator)Object.defineProperty(globalThis,'navigator',previousNavigator);else delete globalThis.navigator;
     dom.reconfigure({url:'https://example.org/iskra/'});
   }
+});
+
+test('empty sample name opens the recording window for its own track',async()=>{
+  const {Drums}=await import('../site/instruments/drums/drums-view.js');
+  const previousOpen=window.open;let opened;
+  globalThis.location=window.location;window.open=url=>{opened=new URL(url);return {closed:false};};
+  const root=createRoot(rootElement);
+  try{
+    await act(async()=>root.render(createElement(Drums)));
+    const button=document.querySelector('[aria-label="Открыть запись семпла 3"]');
+    assert.equal(button.disabled,false);
+    await act(async()=>button.click());
+    assert.equal(opened.searchParams.get('mode'),'recorder');assert.equal(opened.searchParams.get('slot'),'2');
+  }finally{await act(async()=>root.unmount());window.open=previousOpen;delete globalThis.location;}
 });
