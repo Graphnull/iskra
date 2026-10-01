@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bindPlayback } from '../src/core/playback-control.mjs';
+import { bindPlayback } from '../site/core/playback-control.js';
 
 function button() { return { disabled: false, textContent: '▶ Играть', setAttribute(name, value) { this[name] = value; },
   addEventListener(type, fn) { this[type] = fn; }, removeEventListener(type) { delete this[type]; } }; }

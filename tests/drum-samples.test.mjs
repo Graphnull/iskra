@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { restoreSections } from '../src/core/sections.mjs';
-import { SAMPLE_BINDINGS, drumTrackForMidi, drumSampleVoice, decodeDrumSample } from '../src/instruments/drums/drum-samples.mjs';
-import { buildKeyMap } from '../src/core/keyboard-map.mjs';
-import { DRUM_BINDINGS } from '../src/instruments/drums/drum-notes.mjs';
+import { restoreSections } from '../site/core/sections.js';
+import { SAMPLE_BINDINGS, drumTrackForMidi, drumSampleVoice, decodeDrumSample } from '../site/instruments/drums/drum-samples.js';
+import { buildKeyMap } from '../site/core/keyboard-map.js';
+import { DRUM_BINDINGS } from '../site/instruments/drums/drum-notes.js';
 
 test('eight saved drum tracks expand to twelve without losing any section', () => {
   const old = restoreSections(null, null, 8);

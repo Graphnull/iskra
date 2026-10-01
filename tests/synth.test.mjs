@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {synthPosition,restoreSynth,putNote,noteAt,activeSynthNotes} from '../src/instruments/synth/synth-sequence.mjs';
-import {createMicrophone,sampleBounds} from '../src/core/microphone.mjs';
-import {synthVoice,releaseVoice,updateSynthVoice} from '../src/instruments/synth/synth-audio.mjs';
+import {synthPosition,restoreSynth,putNote,noteAt,activeSynthNotes} from '../site/instruments/synth/synth-sequence.js';
+import {createMicrophone,sampleBounds} from '../site/core/microphone.js';
+import {synthVoice,releaseVoice,updateSynthVoice} from '../site/instruments/synth/synth-audio.js';
 
 test('64-step song boundaries, sustained join and section isolation',()=>{
   assert.deepEqual(synthPosition(15),{section:0,column:15});

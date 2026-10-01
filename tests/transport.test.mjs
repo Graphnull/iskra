@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_TRANSPORT, beatAt, boundaryAfter, changeTempo } from '../src/core/transport.mjs';
+import { DEFAULT_TRANSPORT, beatAt, boundaryAfter, changeTempo } from '../site/core/transport.js';
 
 test('devices with different tempo histories join the same global step', () => {
   const deviceA = changeTempo(changeTempo(DEFAULT_TRANSPORT, 90, 'a'), 120, 'a');

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createScheduler } from '../src/core/scheduler.mjs';
+import { createScheduler } from '../site/core/scheduler.js';
 
 function harness() {
   let timestamp = 10000, id = 0;

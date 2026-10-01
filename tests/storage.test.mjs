@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readStored, writeStored } from '../src/core/storage.mjs';
-import { restoreSynth } from '../src/instruments/synth/synth-sequence.mjs';
+import { readStored, writeStored } from '../site/core/storage.js';
+import { restoreSynth } from '../site/instruments/synth/synth-sequence.js';
 
 const backend = value => ({ getItem: () => value, setItem(key, next) { this.saved = [key, next]; } });
 test('damaged tab state falls back to valid local state without erasing notes', () => {

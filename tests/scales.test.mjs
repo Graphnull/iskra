@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pitchForRow, noteLabel } from '../src/core/scales.mjs';
+import { pitchForRow, noteLabel } from '../site/core/scales.js';
 test('major and minor rows follow the scale and cross octaves', () => {
   assert.deepEqual([15,14,13,12,11,10,9,8].map(row => pitchForRow(row,{scale:'major'})), [48,50,52,53,55,57,59,60]);
   assert.deepEqual([15,14,13,12,11,10,9,8].map(row => pitchForRow(row,{scale:'minor'})), [48,50,51,53,55,56,58,60]);

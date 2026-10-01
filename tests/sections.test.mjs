@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sectionPosition, restoreSections } from '../src/core/sections.mjs';
+import { sectionPosition, restoreSections } from '../site/core/sections.js';
 const blank = rows => Array.from({ length: rows }, () => Array(16).fill(false));
 
 test('64-step cycle changes section at boundaries and wraps in shared phase', () => {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { framePosition, storageKeyFor } from '../src/core/widget-storage.mjs';
+import { framePosition, storageKeyFor } from '../site/core/widget-storage.js';
 function root() { const window = { length: 0 }; window.parent = window; return window; }
 function child(parent) { const window = { parent, length: 0 }; parent[parent.length++] = window; return window; }
 test('identical widgets keep separate, stable keys after parent reload', () => {
