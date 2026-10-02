@@ -157,15 +157,11 @@ export function Looper() {
           ))}
         </div>
       </div>
-      <p className="loop-status" role="status">
-        {model.status ||
-          (model.recording
-            ? "Записываю с текущей позиции · максимум один цикл"
-            : "Микрофон · запись с текущего места")}
-      </p>
-      <p className="sequencer-hint">
-        4 секции · 64 шага · до 8 слоёв · слои сохраняются
-      </p>
+      {(model.status || model.recording) && (
+        <p className="loop-status" role="status">
+          {model.status || "Записываю с текущей позиции · максимум один цикл"}
+        </p>
+      )}
     </main>
   );
 }

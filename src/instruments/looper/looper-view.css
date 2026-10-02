@@ -238,10 +238,6 @@
   color: var(--loop-muted);
   flex-shrink: 0;
 }
-.looper .sequencer-hint {
-  font-size: 8px;
-  margin-top: 3px;
-}
 [data-theme="light"] .looper {
   --loop-line: #d8d5cc;
   --loop-surface: #f8f7f3;
