@@ -15,9 +15,6 @@ export function Piano() {
           piano
         />
       </div>
-      <p className="sequencer-hint">
-        Q–] · Z–/ · любая раскладка · можно играть аккордами
-      </p>
     </main>
   );
 }

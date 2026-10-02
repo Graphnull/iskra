@@ -102,9 +102,6 @@ export function Synth() {
           };
         }}
       />
-      <p className="sequencer-hint">
-        Нажми — нота · протяни — длина · Пульт — настройки звука
-      </p>
     </main>
   );
 }

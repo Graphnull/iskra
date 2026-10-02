@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useMemo, useRef } from "react";
-import { sampleStartLimit, sampleWaveform } from "../core/sample-edit.js?v=b9986c18e090";
+import { sampleStartLimit, sampleWaveform } from "../core/sample-edit.js?v=71ab8094b827";
 export function SampleEditor({ buffer, settings, slot, busy, onChange, onPreview, onClose, closeLabel = "Готово", }) {
     const peaks = useMemo(() => sampleWaveform(buffer), [buffer]);
     const pointer = useRef(null);

@@ -1,14 +1,15 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { SampleEditor } from "../../ui/sample-editor.js?v=b9986c18e090";
+import { InstrumentStatus } from "../../ui/status.js?v=71ab8094b827";
+import { SampleEditor } from "../../ui/sample-editor.js?v=71ab8094b827";
 import { useState } from "react";
-import { createDrums, TRACKS } from "./drums.js?v=b9986c18e090";
-import { DRUM_BINDINGS } from "./drum-notes.js?v=b9986c18e090";
-import { SAMPLE_BINDINGS } from "./drum-samples.js?v=b9986c18e090";
-import { at } from "../../core/guards.js?v=b9986c18e090";
-import { useController } from "../../ui/hooks.js?v=b9986c18e090";
-import { Header, PlaybackControls, SectionSelector, } from "../../ui/controls.js?v=b9986c18e090";
-import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=b9986c18e090";
-import { NoteGrid } from "../../ui/grid.js?v=b9986c18e090";
+import { createDrums, TRACKS } from "./drums.js?v=71ab8094b827";
+import { DRUM_BINDINGS } from "./drum-notes.js?v=71ab8094b827";
+import { SAMPLE_BINDINGS } from "./drum-samples.js?v=71ab8094b827";
+import { at } from "../../core/guards.js?v=71ab8094b827";
+import { useController } from "../../ui/hooks.js?v=71ab8094b827";
+import { Header, PlaybackControls, SectionSelector, } from "../../ui/controls.js?v=71ab8094b827";
+import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=71ab8094b827";
+import { NoteGrid } from "../../ui/grid.js?v=71ab8094b827";
 export function Drums() {
     const model = useController(createDrums), keyboard = useKeyboard(model);
     const [keys, setKeys] = useState(false), busy = model.recordState !== "idle", editingSlot = model.editingSlot, editedSample = editingSlot === null ? null : model.samples[editingSlot];
@@ -27,7 +28,5 @@ export function Drums() {
                     return (_jsxs("span", { className: "drum-track-name sample-track", children: [_jsxs("div", { children: [_jsxs("button", { type: "button", className: `sample-preview${sample ? " has-sample" : ""}`, disabled: busy, "aria-label": `Открыть запись семпла ${slot + 1}`, title: sample
                                             ? `Записать ${at(TRACKS, row)} в отдельном окне`
                                             : "Запиши свой звук", onClick: () => model.record(slot), children: ["\u0421\u0435\u043C\u043F\u043B ", slot + 1] }), _jsx("button", { type: "button", className: `sample-record${recording ? " is-recording" : ""}`, disabled: busy && !recording, "aria-label": `${recording ? "Остановить запись" : "Записать"} семпл ${slot + 1}`, onClick: () => model.record(slot), children: recording ? "■" : "●" })] }), _jsxs("small", { children: [binding.key, " \u00B7", " ", sample ? `${sample.duration.toFixed(1)} с` : "пусто"] })] }));
-                } }), model.status && (_jsx("p", { id: "record-status", className: "sequencer-hint", role: "status", children: model.status })), _jsx("p", { className: "sequencer-hint drum-hint", hidden: !!model.status, children: editingSlot !== null
-                    ? "Нажми на волну — сдвинь начало · Q/W/E/R — семплы"
-                    : "4 секции × 16 шагов · красная точка — играет" })] }));
+                } }), _jsx(InstrumentStatus, { id: "record-status", children: model.status })] }));
 }

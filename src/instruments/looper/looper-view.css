@@ -228,16 +228,6 @@
 .loop-layer.is-muted path {
   opacity: 0.3;
 }
-.loop-status {
-  font-size: 9px;
-  line-height: 12px;
-  min-height: 12px;
-  max-height: 36px;
-  overflow: auto;
-  margin: 6px 0 0;
-  color: var(--loop-muted);
-  flex-shrink: 0;
-}
 [data-theme="light"] .looper {
   --loop-line: #d8d5cc;
   --loop-surface: #f8f7f3;

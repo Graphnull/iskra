@@ -15,3 +15,5 @@
 @import "./ui/sample-editor.css";
 
 @import "./instruments/looper/looper-view.css";
+
+@import "./ui/status.css";

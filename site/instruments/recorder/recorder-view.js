@@ -1,13 +1,14 @@
 import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { InstrumentStatus } from "../../ui/status.js?v=71ab8094b827";
 import { useEffect, useRef, useState } from "react";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=b9986c18e090";
-import { isRecord } from "../../core/guards.js?v=b9986c18e090";
-import { audioContext } from "../../core/dom.js?v=b9986c18e090";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=b9986c18e090";
-import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=b9986c18e090";
-import { SampleEditor } from "../../ui/sample-editor.js?v=b9986c18e090";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=71ab8094b827";
+import { isRecord } from "../../core/guards.js?v=71ab8094b827";
+import { audioContext } from "../../core/dom.js?v=71ab8094b827";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=71ab8094b827";
+import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=71ab8094b827";
+import { SampleEditor } from "../../ui/sample-editor.js?v=71ab8094b827";
 export function Recorder() {
-    const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState("Запиши звук, настрой и сохрани в инструмент."), [clip, setClip] = useState(null), [settings, setSettings] = useState({ gain: 1, start: 0 }), [sending, setSending] = useState(false);
+    const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState(""), [clip, setClip] = useState(null), [settings, setSettings] = useState({ gain: 1, start: 0 }), [sending, setSending] = useState(false);
     const microphone = useRef(null), context = useRef(null), voices = useRef(new Set());
     const parameters = new URLSearchParams(location.search), session = parameters.get("session");
     const slot = Number(parameters.get("slot") ?? 0);
@@ -22,7 +23,7 @@ export function Recorder() {
                 return;
             setSettings(restoreSampleSettings(value, buffer.duration));
             setClip({ blob, buffer });
-            setStatus("Настрой звук и нажми «Сохранить в инструмент».");
+            setStatus("");
         }
         const mic = createMicrophone({
             onState(next, count = 0) {
@@ -154,6 +155,6 @@ export function Recorder() {
                                 voice.stop();
                             voices.current.clear();
                             setClip(null);
-                            setStatus("Запиши новый звук.");
-                        } }), _jsx("button", { className: "sample-save", type: "button", disabled: sending, onClick: save, children: sending ? "Сохраняю…" : "Сохранить в инструмент" })] })), _jsx("p", { role: "status", children: status })] }));
+                            setStatus("");
+                        } }), _jsx("button", { className: "sample-save", type: "button", disabled: sending, onClick: save, children: sending ? "Сохраняю…" : "Сохранить в инструмент" })] })), _jsx(InstrumentStatus, { children: status })] }));
 }

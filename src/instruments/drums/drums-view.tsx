@@ -1,3 +1,4 @@
+import { InstrumentStatus } from "../../ui/status.js";
 import { SampleEditor } from "../../ui/sample-editor.js";
 import { useState } from "react";
 import { createDrums, TRACKS } from "./drums.js";
@@ -130,16 +131,7 @@ export function Drums() {
           );
         }}
       />
-      {model.status && (
-        <p id="record-status" className="sequencer-hint" role="status">
-          {model.status}
-        </p>
-      )}
-      <p className="sequencer-hint drum-hint" hidden={!!model.status}>
-        {editingSlot !== null
-          ? "Нажми на волну — сдвинь начало · Q/W/E/R — семплы"
-          : "4 секции × 16 шагов · красная точка — играет"}
-      </p>
+      <InstrumentStatus id="record-status">{model.status}</InstrumentStatus>
     </main>
   );
 }

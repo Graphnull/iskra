@@ -1,12 +1,12 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
-import { createTenorion, rowMidi, SIZE } from "./tenorion.js?v=b9986c18e090";
-import { SCALES, isScaleId, noteLabel } from "../../core/scales.js?v=b9986c18e090";
-import { at } from "../../core/guards.js?v=b9986c18e090";
-import { useController } from "../../ui/hooks.js?v=b9986c18e090";
-import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=b9986c18e090";
-import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=b9986c18e090";
-import { NoteGrid } from "../../ui/grid.js?v=b9986c18e090";
+import { createTenorion, rowMidi, SIZE } from "./tenorion.js?v=71ab8094b827";
+import { SCALES, isScaleId, noteLabel } from "../../core/scales.js?v=71ab8094b827";
+import { at } from "../../core/guards.js?v=71ab8094b827";
+import { useController } from "../../ui/hooks.js?v=71ab8094b827";
+import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=71ab8094b827";
+import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=71ab8094b827";
+import { NoteGrid } from "../../ui/grid.js?v=71ab8094b827";
 export function Tenorion() {
     const model = useController(createTenorion), keyboard = useKeyboard(model);
     const [keys, setKeys] = useState(false);
@@ -21,5 +21,5 @@ export function Tenorion() {
                                     transpose: Math.round(value),
                                 }) })] }), _jsxs("label", { children: ["\u041E\u043A\u0442\u0430\u0432\u0430", " ", _jsx(NumberControl, { label: "\u0421\u0434\u0432\u0438\u0433 \u043E\u043A\u0442\u0430\u0432\u044B", value: model.harmony.octave, min: -2, max: 2, onChange: (value) => model.setHarmony({ ...model.harmony, octave: Math.round(value) }) })] })] }), _jsx(SectionSelector, { selected: model.sequence.state.selected, playing: model.playing, onSelect: model.select }), _jsx("section", { className: "live-keys", "aria-label": "\u0418\u0433\u0440\u0430 \u0441 \u043A\u043B\u0430\u0432\u0438\u0430\u0442\u0443\u0440\u044B, \u043C\u044B\u0448\u044C\u044E \u0438\u043B\u0438 \u043A\u0430\u0441\u0430\u043D\u0438\u0435\u043C", hidden: !keys, children: _jsx(Keyboard, { binding: keyboard, labelFor: model.labelFor }) }), _jsx(NoteGrid, { kind: "light", labels: Array.from({ length: SIZE }, (_, row) => noteLabel(rowMidi(row, model.harmony))), selected: model.sequence.state.selected, playing: model.playing, hidden: keys, note: (row, column) => ({
                     enabled: !!at(model.sequence.pattern, row)[column],
-                }), onEdit: model.edit }), _jsx("p", { className: "sequencer-hint", children: "4 \u0441\u0435\u043A\u0446\u0438\u0438 \u00D7 16 \u0448\u0430\u0433\u043E\u0432 \u00B7 \u043A\u0440\u0430\u0441\u043D\u0430\u044F \u0442\u043E\u0447\u043A\u0430 \u2014 \u0438\u0433\u0440\u0430\u0435\u0442" })] }));
+                }), onEdit: model.edit })] }));
 }

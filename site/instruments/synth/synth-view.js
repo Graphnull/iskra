@@ -1,15 +1,15 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
-import { createSynth } from "./synth.js?v=b9986c18e090";
-import { SynthPanel } from "./synth-panel.js?v=b9986c18e090";
-import { SYNTH_ROWS, noteAt } from "./synth-sequence.js?v=b9986c18e090";
-import { noteLabel } from "../../core/scales.js?v=b9986c18e090";
-import { at } from "../../core/guards.js?v=b9986c18e090";
-import { buildKeyMap } from "../../core/keyboard-map.js?v=b9986c18e090";
-import { useController } from "../../ui/hooks.js?v=b9986c18e090";
-import { useKeyboard } from "../../ui/keyboard.js?v=b9986c18e090";
-import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=b9986c18e090";
-import { NoteGrid } from "../../ui/grid.js?v=b9986c18e090";
+import { createSynth } from "./synth.js?v=71ab8094b827";
+import { SynthPanel } from "./synth-panel.js?v=71ab8094b827";
+import { SYNTH_ROWS, noteAt } from "./synth-sequence.js?v=71ab8094b827";
+import { noteLabel } from "../../core/scales.js?v=71ab8094b827";
+import { at } from "../../core/guards.js?v=71ab8094b827";
+import { buildKeyMap } from "../../core/keyboard-map.js?v=71ab8094b827";
+import { useController } from "../../ui/hooks.js?v=71ab8094b827";
+import { useKeyboard } from "../../ui/keyboard.js?v=71ab8094b827";
+import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=71ab8094b827";
+import { NoteGrid } from "../../ui/grid.js?v=71ab8094b827";
 const KEYS = buildKeyMap();
 export function Synth() {
     const model = useController(createSynth), keyboard = useKeyboard(model), state = model.state;
@@ -22,5 +22,5 @@ export function Synth() {
                         end: !!note && note.start + note.length - 1 === column,
                         ...(note ? { length: note.length } : {}),
                     };
-                } }), _jsx("p", { className: "sequencer-hint", children: "\u041D\u0430\u0436\u043C\u0438 \u2014 \u043D\u043E\u0442\u0430 \u00B7 \u043F\u0440\u043E\u0442\u044F\u043D\u0438 \u2014 \u0434\u043B\u0438\u043D\u0430 \u00B7 \u041F\u0443\u043B\u044C\u0442 \u2014 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0437\u0432\u0443\u043A\u0430" })] }));
+                } })] }));
 }

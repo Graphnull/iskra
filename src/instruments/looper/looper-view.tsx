@@ -1,3 +1,4 @@
+import { InstrumentStatus } from "../../ui/status.js";
 import { createLooper } from "./looper.js";
 import { useController } from "../../ui/hooks.js";
 import { Header, PlaybackControls } from "../../ui/controls.js";
@@ -157,11 +158,12 @@ export function Looper() {
           ))}
         </div>
       </div>
-      {(model.status || model.recording) && (
-        <p className="loop-status" role="status">
-          {model.status || "Записываю с текущей позиции · максимум один цикл"}
-        </p>
-      )}
+      <InstrumentStatus>
+        {model.status ||
+          (model.recording
+            ? "Записываю с текущей позиции · максимум один цикл"
+            : "")}
+      </InstrumentStatus>
     </main>
   );
 }

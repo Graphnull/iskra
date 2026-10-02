@@ -106,9 +106,6 @@ export function Tenorion() {
         })}
         onEdit={model.edit}
       />
-      <p className="sequencer-hint">
-        4 секции × 16 шагов · красная точка — играет
-      </p>
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { InstrumentStatus } from "../../ui/status.js";
 import { useEffect, useRef, useState } from "react";
 import { createMicrophone, microphoneError } from "../../core/microphone.js";
 import type { MicrophoneState } from "../../core/microphone.js";
@@ -14,9 +15,7 @@ interface Clip {
 export function Recorder() {
   const [state, setState] = useState<MicrophoneState>("idle"),
     [seconds, setSeconds] = useState(0),
-    [status, setStatus] = useState(
-      "Запиши звук, настрой и сохрани в инструмент.",
-    ),
+    [status, setStatus] = useState(""),
     [clip, setClip] = useState<Clip | null>(null),
     [settings, setSettings] = useState<SampleSettings>({ gain: 1, start: 0 }),
     [sending, setSending] = useState(false);
@@ -37,7 +36,7 @@ export function Recorder() {
       if (disposed || generation !== revision) return;
       setSettings(restoreSampleSettings(value, buffer.duration));
       setClip({ blob, buffer });
-      setStatus("Настрой звук и нажми «Сохранить в инструмент».");
+      setStatus("");
     }
     const mic = createMicrophone({
       onState(next, count = 0) {
@@ -208,7 +207,7 @@ export function Recorder() {
               for (const voice of voices.current) voice.stop();
               voices.current.clear();
               setClip(null);
-              setStatus("Запиши новый звук.");
+              setStatus("");
             }}
           />
           <button
@@ -221,7 +220,7 @@ export function Recorder() {
           </button>
         </>
       )}
-      <p role="status">{status}</p>
+      <InstrumentStatus>{status}</InstrumentStatus>
     </main>
   );
 }
