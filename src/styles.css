@@ -13,3 +13,5 @@
 @import "./instruments/recorder/recorder-view.css";
 @import "./instruments/synth/synth-panel.css";
 @import "./ui/sample-editor.css";
+
+@import "./instruments/looper/looper-view.css";

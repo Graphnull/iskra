@@ -90,12 +90,14 @@ export function PlaybackControls({
   children,
   disabled = false,
   drums = false,
+  clearLabel = "Очистить текущую секцию",
 }: {
   engine: SequencerEngine;
   onClear(): void;
   children?: ReactNode;
   disabled?: boolean;
   drums?: boolean;
+  clearLabel?: string;
 }) {
   return (
     <div className={`sequencer-controls${drums ? " drum-controls" : ""}`}>
@@ -106,7 +108,11 @@ export function PlaybackControls({
         disabled={engine.starting || disabled}
         onClick={() => void engine.toggle()}
       >
-        {engine.running ? "■ Стоп" : engine.failed ? "Повторить" : "▶ Играть"}
+        {engine.running
+          ? "Звук включён"
+          : engine.failed
+            ? "Повторить"
+            : "Звук выключен"}
       </button>
       {children}
       <label className="tempo">
@@ -121,8 +127,9 @@ export function PlaybackControls({
       </label>
       <button
         type="button"
-        aria-label="Очистить текущую секцию"
-        title="Очистить текущую секцию"
+        aria-label={clearLabel}
+        title={clearLabel}
+        disabled={disabled}
         onClick={onClear}
       >
         Сброс

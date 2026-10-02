@@ -1,4 +1,7 @@
-export async function sampleStore(key: string, blob?: Blob): Promise<unknown> {
+export async function sampleStore(
+  key: string,
+  blob?: Blob | null,
+): Promise<unknown> {
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open("piano-samples-v1", 1);
     request.onupgradeneeded = () => request.result.createObjectStore("samples");
@@ -13,7 +16,11 @@ export async function sampleStore(key: string, blob?: Blob): Promise<unknown> {
       );
       const store = transaction.objectStore("samples");
       const request: { readonly result: unknown } =
-        blob === undefined ? store.get(key) : store.put(blob, key);
+        blob === undefined
+          ? store.get(key)
+          : blob === null
+            ? store.delete(key)
+            : store.put(blob, key);
       transaction.oncomplete = () => resolve(request.result);
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () =>

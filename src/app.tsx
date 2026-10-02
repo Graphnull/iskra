@@ -8,6 +8,7 @@ import { Tenorion } from "./instruments/tenorion/tenorion-view.js";
 import { Drums } from "./instruments/drums/drums-view.js";
 import { Synth } from "./instruments/synth/synth-view.js";
 import { Recorder } from "./instruments/recorder/recorder-view.js";
+import { Looper } from "./instruments/looper/looper-view.js";
 const MODES: Record<
   string,
   { View: ComponentType; title: string; sequencer: boolean }
@@ -20,6 +21,8 @@ const MODES: Record<
   },
   drums: { View: Drums, title: "Драм-машина", sequencer: true },
   synth: { View: Synth, title: "Синтезатор — волны и ноты", sequencer: true },
+  looper: { View: Looper, title: "Лупер — слои звука", sequencer: true },
+  "looper-recorder": { View: Looper, title: "Записать слой", sequencer: true },
   recorder: { View: Recorder, title: "Запись семпла", sequencer: false },
 };
 const parameters = new URLSearchParams(location.search),

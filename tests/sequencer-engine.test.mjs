@@ -35,3 +35,17 @@ test('stop cancels pending start and repeated clicks cannot create concurrent sc
   pending=model.toggle();assert.equal(requests.length,2);requests[1]();await pending;assert.equal(model.running,true);
   cleanup();
 });
+
+test('muted instruments advance the visual clock without preparing audio',async()=>{
+  let prepared=0,contexts=0;const visuals=[],notes=[];
+  const model=createSequencerEngine({prepare:async()=>{prepared++;},context:()=>{contexts++;return {currentTime:1};},onStep:step=>notes.push(step),onVisual:step=>visuals.push(step),onChange(){},onReset(){},onStop(){}});
+  const cleanup=model.connect();
+  try {
+    await new Promise(resolve=>setTimeout(resolve,220));
+    assert.ok(visuals.length>=2);assert.equal(prepared,0);assert.equal(contexts,0);assert.equal(notes.length,0);
+    await model.toggle();assert.equal(model.running,true);assert.equal(prepared,1);
+    model.stop();const before=visuals.length,count=notes.length;
+    await new Promise(resolve=>setTimeout(resolve,220));
+    assert.ok(visuals.length>before);assert.equal(notes.length,count);assert.equal(model.running,false);
+  } finally {cleanup();}
+});

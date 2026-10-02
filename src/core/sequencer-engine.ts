@@ -1,5 +1,10 @@
 import { createScheduler } from "./scheduler.js";
-import { createTransport, DEFAULT_TRANSPORT } from "./transport.js";
+import {
+  createTransport,
+  DEFAULT_TRANSPORT,
+  beatAt,
+  wallTime,
+} from "./transport.js";
 interface EngineOptions {
   context(): AudioContext;
   prepare(): Promise<void>;
@@ -18,9 +23,12 @@ export function createSequencerEngine(options: EngineOptions) {
     disposed = false,
     generation = 0;
   const scheduler = createScheduler({
-    context: options.context,
+    context: () =>
+      running ? options.context() : { currentTime: performance.now() / 1000 },
     transport: () => transport?.state ?? DEFAULT_TRANSPORT,
-    onStep: options.onStep,
+    onStep: (step) => {
+      if (running) options.onStep(step);
+    },
     onVisual: options.onVisual,
     onError() {
       stop();
@@ -34,22 +42,28 @@ export function createSequencerEngine(options: EngineOptions) {
     running = false;
     scheduler.stop();
     options.onStop();
+    if (!disposed && transport) {
+      options.onVisual(Math.floor(beatAt(transport.state, wallTime())));
+      scheduler.start();
+    }
     options.onChange();
   }
   function reset() {
-    if (running) {
+    if (scheduler.running) {
       scheduler.reset();
-      options.onReset();
+      if (running) options.onReset();
     }
   }
   function visibility() {
     if (!document.hidden) {
       transport?.refresh();
+      if (!scheduler.running && !disposed) scheduler.start();
       reset();
     }
   }
   function pagehide() {
     stop();
+    scheduler.stop();
   }
   function dispose() {
     disposed = true;
@@ -80,6 +94,8 @@ export function createSequencerEngine(options: EngineOptions) {
       });
       document.addEventListener("visibilitychange", visibility);
       window.addEventListener("pagehide", pagehide);
+      options.onVisual(Math.floor(beatAt(transport.state, wallTime())));
+      scheduler.start();
       options.onChange();
       return dispose;
     },
@@ -98,6 +114,7 @@ export function createSequencerEngine(options: EngineOptions) {
         if (disposed || request !== generation) return;
         transport?.refresh();
         running = true;
+        scheduler.stop();
         scheduler.start();
       } catch {
         if (disposed || request !== generation) return;

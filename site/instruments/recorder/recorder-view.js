@@ -1,11 +1,11 @@
 import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from "react";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=b2a541907b97";
-import { isRecord } from "../../core/guards.js?v=b2a541907b97";
-import { audioContext } from "../../core/dom.js?v=b2a541907b97";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=b2a541907b97";
-import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=b2a541907b97";
-import { SampleEditor } from "../../ui/sample-editor.js?v=b2a541907b97";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=86d6e3e520cc";
+import { isRecord } from "../../core/guards.js?v=86d6e3e520cc";
+import { audioContext } from "../../core/dom.js?v=86d6e3e520cc";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=86d6e3e520cc";
+import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=86d6e3e520cc";
+import { SampleEditor } from "../../ui/sample-editor.js?v=86d6e3e520cc";
 export function Recorder() {
     const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState("Запиши звук, настрой и сохрани в инструмент."), [clip, setClip] = useState(null), [settings, setSettings] = useState({ gain: 1, start: 0 }), [sending, setSending] = useState(false);
     const microphone = useRef(null), context = useRef(null), voices = useRef(new Set());

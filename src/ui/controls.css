@@ -52,15 +52,16 @@
 
 .sequencer-controls #play {
   min-width: 76px;
-  background: #b4e5c1;
-  color: #172a22;
-  border-color: #b4e5c1;
+  background: #2b2b29;
+  color: #bcbab2;
+  border-color: #60605a;
   font-weight: 700;
 }
 
 .sequencer-controls #play[aria-pressed="true"] {
-  background: #f1c786;
-  border-color: #f1c786;
+  background: #b4e5c1;
+  border-color: #b4e5c1;
+  color: #172a22;
 }
 
 .tempo {
@@ -225,12 +226,13 @@
 }
 
 [data-theme="light"] .sequencer-controls #play {
-  background: #b4e5c1;
-  color: #172a22;
-  border-color: #85bd96;
+  background: #fcfbf7;
+  color: #646259;
+  border-color: #bdb9ad;
 }
 
 [data-theme="light"] .sequencer-controls #play[aria-pressed="true"] {
-  background: #f1c786;
-  border-color: #d0a365;
+  background: #b4e5c1;
+  border-color: #85bd96;
+  color: #172a22;
 }

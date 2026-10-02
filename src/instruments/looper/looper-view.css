@@ -1,0 +1,162 @@
+.loop-timeline {
+  display: flex;
+  position: relative;
+  height: 25px;
+  flex-shrink: 0;
+  margin: 2px 0 7px;
+  overflow: hidden;
+  border: 1px solid #62625a;
+  border-radius: 6px;
+}
+.loop-timeline span {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  padding: 4px;
+  color: #aaa89f;
+  border-right: 1px solid #62625a;
+}
+.loop-timeline .is-current {
+  background: #89534f;
+  color: #fff;
+}
+.loop-cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #f3b5ae;
+}
+.loop-record {
+  min-height: 32px;
+  flex-shrink: 0;
+  border: 1px solid #dc827a;
+  border-radius: 8px;
+  background: #dc827a;
+  color: #241c1b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.loop-record.is-recording {
+  background: #89534f;
+  color: #fff;
+}
+.loop-record:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.loop-status {
+  font-size: 10px;
+  min-height: 12px;
+  margin: 5px 0;
+  color: #bcbab2;
+  flex-shrink: 0;
+}
+.loop-layers {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+.loop-empty {
+  text-align: center;
+  color: #bcbab2;
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 20px;
+}
+.loop-layer {
+  padding: 6px;
+  border: 1px solid #62625a;
+  border-radius: 8px;
+  margin: 0 0 5px;
+}
+.loop-layer-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.loop-layer-heading strong {
+  flex: 1;
+}
+.loop-layer button {
+  font: inherit;
+  font-size: 10px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid #62625a;
+  border-radius: 5px;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+.loop-layer svg {
+  width: 100%;
+  height: 32px;
+  display: block;
+  margin: 3px 0;
+  background: #191918;
+  border-radius: 4px;
+}
+.loop-layer path {
+  stroke: #b4e5c1;
+  stroke-width: 0.65;
+}
+.loop-layer line {
+  stroke: #dc827a;
+  stroke-width: 0.5;
+}
+.loop-layer label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+}
+.loop-layer input {
+  flex: 1;
+  min-width: 0;
+  accent-color: #dc827a;
+  height: 14px;
+}
+.loop-layer label span {
+  width: 30px;
+  text-align: right;
+}
+.loop-layer.is-muted path {
+  stroke: #77746b;
+}
+[data-theme="light"] .loop-status,
+[data-theme="light"] .loop-empty {
+  color: #646259;
+}
+[data-theme="light"] .loop-layer,
+[data-theme="light"] .loop-timeline,
+[data-theme="light"] .loop-layer button {
+  border-color: #bdb9ad;
+}
+[data-theme="light"] .loop-layer svg {
+  background: #dedbd2;
+}
+[data-theme="light"] .loop-layer path {
+  stroke: #348b44;
+}
+[data-theme="light"] .loop-layer.is-muted path {
+  stroke: #77746b;
+}
+
+.loop-popup {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: underline;
+}
+.loop-popup:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

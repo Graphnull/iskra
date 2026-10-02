@@ -1,4 +1,4 @@
-import { boundaryAfter, wallTime } from "./transport.js?v=b2a541907b97";
+import { boundaryAfter, wallTime } from "./transport.js?v=86d6e3e520cc";
 export function createScheduler({ context, transport, onStep, onVisual, onError = () => { }, now = wallTime, timers = globalThis, lookahead = 200, interval = 25, }) {
     let running = false, cursor = 0, first = true, generation = 0;
     let timer;
