@@ -19,7 +19,6 @@ export function Tenorion() {
     <main className="tenorion" aria-labelledby="title">
       <Header
         title="Tenori-on"
-        eyebrow="СВЕТОВАЯ МУЗЫКА"
         view={keys ? "keys" : "grid"}
         onToggle={() => {
           keyboard.releaseAll();

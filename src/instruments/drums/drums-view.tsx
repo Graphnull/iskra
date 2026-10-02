@@ -24,7 +24,6 @@ export function Drums() {
     <main className="tenorion drum-machine" aria-labelledby="title">
       <Header
         title="Драм-машина"
-        eyebrow="СОБЕРИ СВОЙ ГРУВ"
         view={keys ? "keys" : "grid"}
         onToggle={() => {
           keyboard.releaseAll();

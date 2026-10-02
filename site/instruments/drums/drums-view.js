@@ -1,19 +1,19 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { InstrumentStatus } from "../../ui/status.js?v=71ab8094b827";
-import { SampleEditor } from "../../ui/sample-editor.js?v=71ab8094b827";
+import { InstrumentStatus } from "../../ui/status.js?v=744a04fa91ff";
+import { SampleEditor } from "../../ui/sample-editor.js?v=744a04fa91ff";
 import { useState } from "react";
-import { createDrums, TRACKS } from "./drums.js?v=71ab8094b827";
-import { DRUM_BINDINGS } from "./drum-notes.js?v=71ab8094b827";
-import { SAMPLE_BINDINGS } from "./drum-samples.js?v=71ab8094b827";
-import { at } from "../../core/guards.js?v=71ab8094b827";
-import { useController } from "../../ui/hooks.js?v=71ab8094b827";
-import { Header, PlaybackControls, SectionSelector, } from "../../ui/controls.js?v=71ab8094b827";
-import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=71ab8094b827";
-import { NoteGrid } from "../../ui/grid.js?v=71ab8094b827";
+import { createDrums, TRACKS } from "./drums.js?v=744a04fa91ff";
+import { DRUM_BINDINGS } from "./drum-notes.js?v=744a04fa91ff";
+import { SAMPLE_BINDINGS } from "./drum-samples.js?v=744a04fa91ff";
+import { at } from "../../core/guards.js?v=744a04fa91ff";
+import { useController } from "../../ui/hooks.js?v=744a04fa91ff";
+import { Header, PlaybackControls, SectionSelector, } from "../../ui/controls.js?v=744a04fa91ff";
+import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=744a04fa91ff";
+import { NoteGrid } from "../../ui/grid.js?v=744a04fa91ff";
 export function Drums() {
     const model = useController(createDrums), keyboard = useKeyboard(model);
     const [keys, setKeys] = useState(false), busy = model.recordState !== "idle", editingSlot = model.editingSlot, editedSample = editingSlot === null ? null : model.samples[editingSlot];
-    return (_jsxs("main", { className: "tenorion drum-machine", "aria-labelledby": "title", children: [_jsx(Header, { title: "\u0414\u0440\u0430\u043C-\u043C\u0430\u0448\u0438\u043D\u0430", eyebrow: "\u0421\u041E\u0411\u0415\u0420\u0418 \u0421\u0412\u041E\u0419 \u0413\u0420\u0423\u0412", view: keys ? "keys" : "grid", onToggle: () => {
+    return (_jsxs("main", { className: "tenorion drum-machine", "aria-labelledby": "title", children: [_jsx(Header, { title: "\u0414\u0440\u0430\u043C-\u043C\u0430\u0448\u0438\u043D\u0430", view: keys ? "keys" : "grid", onToggle: () => {
                     keyboard.releaseAll();
                     model.openSample(null);
                     setKeys(!keys);

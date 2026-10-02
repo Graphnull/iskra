@@ -7,7 +7,7 @@ export function Piano() {
     keyboard = useKeyboard(model);
   return (
     <main className="piano piano-instrument" aria-labelledby="title">
-      <Header title="Пианино" eyebrow="ИГРАЙ С КЛАВИАТУРЫ" />
+      <Header title="Пианино" />
       <div className="piano-keyboard">
         <Keyboard
           binding={keyboard}

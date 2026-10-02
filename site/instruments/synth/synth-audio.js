@@ -1,4 +1,4 @@
-import { DEFAULT_WAVE } from "./synth-sequence.js?v=71ab8094b827";
+import { DEFAULT_WAVE } from "./synth-sequence.js?v=744a04fa91ff";
 function filterLevels(voice) {
     const base = Math.max(20, Math.min(voice.filterMax, voice.cutoff));
     const peak = Math.min(voice.filterMax, base * 2 ** (voice.filterAmount * 5));

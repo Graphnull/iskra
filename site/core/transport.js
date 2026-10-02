@@ -1,4 +1,4 @@
-import { isRecord, isNumber, isInteger } from "./guards.js?v=71ab8094b827";
+import { isRecord, isNumber, isInteger } from "./guards.js?v=744a04fa91ff";
 // Every device derives musical phase from Unix time and the selected BPM.
 export const DEFAULT_TRANSPORT = { bpm: 110, revision: 0, sender: "" };
 export const wallTime = () => Date.now();

@@ -1,8 +1,8 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from "react";
-import { FocusIndicator } from "./focus.js?v=71ab8094b827";
-export function Header({ title, eyebrow, view, onToggle, alternateLabel = "Клавиши", }) {
-    return (_jsxs("header", { className: "heading", children: [_jsxs("div", { children: [eyebrow && _jsx("p", { className: "eyebrow", children: eyebrow }), _jsx("h1", { id: "title", children: title })] }), _jsxs("div", { className: "live-actions", children: [_jsx(FocusIndicator, {}), onToggle && (_jsx("button", { type: "button", className: "view-toggle", "aria-pressed": view !== "grid", onClick: onToggle, children: view === "grid" ? alternateLabel : "Сетка" }))] })] }));
+import { FocusIndicator } from "./focus.js?v=744a04fa91ff";
+export function Header({ title, view, onToggle, alternateLabel = "Клавиши", }) {
+    return (_jsxs("header", { className: "heading", children: [_jsx("div", { children: _jsx("h1", { id: "title", children: title }) }), _jsxs("div", { className: "live-actions", children: [_jsx(FocusIndicator, {}), onToggle && (_jsx("button", { type: "button", className: "view-toggle", "aria-pressed": view !== "grid", onClick: onToggle, children: view === "grid" ? alternateLabel : "Сетка" }))] })] }));
 }
 export function NumberControl({ value, onChange, label, min, max, }) {
     const [text, setText] = useState(String(value));

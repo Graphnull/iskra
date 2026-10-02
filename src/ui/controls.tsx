@@ -5,13 +5,11 @@ import type { SequencerEngine } from "../core/sequencer-engine.js";
 import { FocusIndicator } from "./focus.js";
 export function Header({
   title,
-  eyebrow,
   view,
   onToggle,
   alternateLabel = "Клавиши",
 }: {
   title: string;
-  eyebrow?: string;
   view?: "grid" | "keys" | "panel";
   onToggle?: () => void;
   alternateLabel?: string;
@@ -19,7 +17,6 @@ export function Header({
   return (
     <header className="heading">
       <div>
-        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1 id="title">{title}</h1>
       </div>
       <div className="live-actions">

@@ -1,16 +1,16 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
-import { createTenorion, rowMidi, SIZE } from "./tenorion.js?v=71ab8094b827";
-import { SCALES, isScaleId, noteLabel } from "../../core/scales.js?v=71ab8094b827";
-import { at } from "../../core/guards.js?v=71ab8094b827";
-import { useController } from "../../ui/hooks.js?v=71ab8094b827";
-import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=71ab8094b827";
-import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=71ab8094b827";
-import { NoteGrid } from "../../ui/grid.js?v=71ab8094b827";
+import { createTenorion, rowMidi, SIZE } from "./tenorion.js?v=744a04fa91ff";
+import { SCALES, isScaleId, noteLabel } from "../../core/scales.js?v=744a04fa91ff";
+import { at } from "../../core/guards.js?v=744a04fa91ff";
+import { useController } from "../../ui/hooks.js?v=744a04fa91ff";
+import { Header, PlaybackControls, NumberControl, SectionSelector, } from "../../ui/controls.js?v=744a04fa91ff";
+import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=744a04fa91ff";
+import { NoteGrid } from "../../ui/grid.js?v=744a04fa91ff";
 export function Tenorion() {
     const model = useController(createTenorion), keyboard = useKeyboard(model);
     const [keys, setKeys] = useState(false);
-    return (_jsxs("main", { className: "tenorion", "aria-labelledby": "title", children: [_jsx(Header, { title: "Tenori-on", eyebrow: "\u0421\u0412\u0415\u0422\u041E\u0412\u0410\u042F \u041C\u0423\u0417\u042B\u041A\u0410", view: keys ? "keys" : "grid", onToggle: () => {
+    return (_jsxs("main", { className: "tenorion", "aria-labelledby": "title", children: [_jsx(Header, { title: "Tenori-on", view: keys ? "keys" : "grid", onToggle: () => {
                     keyboard.releaseAll();
                     setKeys(!keys);
                 } }), _jsx(PlaybackControls, { engine: model.engine, onClear: model.clear, children: _jsxs("select", { "aria-label": "\u0418\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442", value: model.instrument, onChange: (event) => model.setInstrument(event.target.value), children: [_jsx("option", { value: "bell", children: "\u041A\u043E\u043B\u043E\u043A\u043E\u043B\u044C\u0447\u0438\u043A" }), _jsx("option", { value: "keys", children: "\u042D\u043B\u0435\u043A\u0442\u0440\u043E\u043F\u0438\u0430\u043D\u043E" }), _jsx("option", { value: "pluck", children: "\u0429\u0438\u043F\u043A\u043E\u0432\u044B\u0439" }), _jsx("option", { value: "pad", children: "\u0421\u0438\u043D\u0442\u0435\u0437\u0430\u0442\u043E\u0440" })] }) }), _jsxs("div", { className: "harmony-controls", children: [_jsx("select", { "aria-label": "\u0413\u0430\u043C\u043C\u0430", value: model.harmony.scale, onChange: (event) => {
