@@ -1,5 +1,6 @@
-import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=6afdd2300d9b";
-import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=6afdd2300d9b";
+import { putNote } from "../../core/melodic-sequence.js?v=f1d1aaff72ac";
+import { SECTION_STEPS, sectionPosition } from "../../core/sections.js?v=f1d1aaff72ac";
+import { at, isRecord, isInteger, isNumber } from "../../core/guards.js?v=f1d1aaff72ac";
 export const SYNTH_STEPS = SECTION_STEPS;
 export const SYNTH_ROWS = 16;
 export const synthPosition = sectionPosition;
@@ -29,20 +30,7 @@ export const DEFAULT_WAVE = {
     bass: "sine",
     lead: "square",
 };
-export function noteAt(notes, row, column) {
-    return notes.find((note) => note.row === row &&
-        column >= note.start &&
-        column < note.start + note.length);
-}
-export function putNote(notes, row, start, length) {
-    const next = { row, start, length: Math.min(length, SYNTH_STEPS - start) };
-    return [
-        ...notes.filter((note) => note.row !== row ||
-            note.start + note.length <= start ||
-            note.start >= start + next.length),
-        next,
-    ];
-}
+export { noteAt, putNote } from "../../core/melodic-sequence.js?v=f1d1aaff72ac";
 const RANGES = [
     ["cutoff", 20, 10000],
     ["resonance", 0, 12],

@@ -1,8 +1,8 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { InstrumentStatus } from "../../ui/status.js?v=6afdd2300d9b";
-import { createLooper } from "./looper.js?v=6afdd2300d9b";
-import { useController } from "../../ui/hooks.js?v=6afdd2300d9b";
-import { Header, PlaybackControls } from "../../ui/controls.js?v=6afdd2300d9b";
+import { InstrumentStatus } from "../../ui/status.js?v=f1d1aaff72ac";
+import { createLooper } from "./looper.js?v=f1d1aaff72ac";
+import { useController } from "../../ui/hooks.js?v=f1d1aaff72ac";
+import { Header, PlaybackControls } from "../../ui/controls.js?v=f1d1aaff72ac";
 function waveform(buffer, gain) {
     if (!buffer)
         return "";

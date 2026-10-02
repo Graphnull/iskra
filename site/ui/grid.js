@@ -6,7 +6,7 @@ const OFFSETS = {
     ArrowUp: [-1, 0],
     ArrowDown: [1, 0],
 };
-export function NoteGrid({ kind, labels, rowContent, selected, playing, note, onEdit, hidden = false, activeLabels = [], }) {
+export function NoteGrid({ kind, labels, rowContent, selected, playing, note, onEdit, hidden = false, activeLabels = [], ariaLabel, }) {
     const [focused, setFocused] = useState(0);
     const [preview, setPreview] = useState(null);
     const cells = useRef(new Map());
@@ -17,13 +17,16 @@ export function NoteGrid({ kind, labels, rowContent, selected, playing, note, on
         previous.current = selected;
         drag.current = null;
     }
+    if (hidden)
+        drag.current = null;
     return (_jsxs("div", { className: kind === "drum"
             ? "drum-grid"
-            : `light-grid${kind === "synth" ? " synth-grid" : ""}`, role: "group", "aria-label": kind === "synth"
-            ? "Ноты синтезатора"
-            : kind === "drum"
-                ? "Восемь ударных и четыре семпла, шестнадцать шагов"
-                : "Сетка нот: 16 шагов, 16 высот", hidden: hidden, onPointerDown: (event) => {
+            : `light-grid${kind === "synth" ? " synth-grid" : ""}`, role: "group", "aria-label": ariaLabel ??
+            (kind === "synth"
+                ? "Ноты синтезатора"
+                : kind === "drum"
+                    ? "Восемь ударных и четыре семпла, шестнадцать шагов"
+                    : "Сетка нот: 16 шагов, 16 высот"), hidden: hidden, onPointerDown: (event) => {
             if (kind !== "synth" ||
                 event.button !== 0 ||
                 !(event.target instanceof Element))

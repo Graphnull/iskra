@@ -1,6 +1,7 @@
-import { audioContext as createAudioContext } from "../../core/dom.js?v=6afdd2300d9b";
-import { createObservable } from "../../core/observable.js?v=6afdd2300d9b";
-export { buildKeyMap } from "../../core/keyboard-map.js?v=6afdd2300d9b";
+import { pianoTone } from "../../core/piano-tone.js?v=f1d1aaff72ac";
+import { audioContext as createAudioContext } from "../../core/dom.js?v=f1d1aaff72ac";
+import { createObservable } from "../../core/observable.js?v=f1d1aaff72ac";
+export { buildKeyMap } from "../../core/keyboard-map.js?v=f1d1aaff72ac";
 export function releaseVoice(voice, now) {
     voice.release.gain.setValueAtTime(1, now);
     voice.release.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
@@ -45,40 +46,8 @@ export function createPiano() {
             await audio.resume();
             if (disposed || activeLifecycle !== lifecycle)
                 return;
-            const fundamental = audio.createOscillator(), overtone = audio.createOscillator(), overtoneLevel = audio.createGain(), tone = audio.createGain(), release = audio.createGain();
-            fundamental.type = "triangle";
-            fundamental.frequency.value = key.frequency;
-            overtone.type = "sine";
-            overtone.frequency.value = key.frequency * 2;
-            overtoneLevel.gain.value = 0.16;
-            const now = audio.currentTime;
-            tone.gain.setValueAtTime(0.0001, now);
-            tone.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
-            tone.gain.exponentialRampToValueAtTime(0.07, now + 0.35);
-            tone.gain.exponentialRampToValueAtTime(0.035, now + 2);
-            release.gain.value = 1;
-            fundamental.connect(tone);
-            overtone.connect(overtoneLevel).connect(tone);
-            tone.connect(release).connect(audio.destination);
-            fundamental.start();
-            overtone.start();
-            voices.set(source, {
-                release,
-                oscillators: [fundamental, overtone],
-                code: key.code,
-            });
-            let remaining = 2;
-            const ended = () => {
-                if (--remaining === 0) {
-                    fundamental.disconnect();
-                    overtone.disconnect();
-                    overtoneLevel.disconnect();
-                    tone.disconnect();
-                    release.disconnect();
-                }
-            };
-            fundamental.onended = ended;
-            overtone.onended = ended;
+            const voice = pianoTone(audio, audio.destination, key.frequency, audio.currentTime);
+            voices.set(source, { ...voice, code: key.code });
             return source;
         },
         onNoteOff: release,

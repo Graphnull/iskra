@@ -1,15 +1,15 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { InstrumentStatus } from "../../ui/status.js?v=6afdd2300d9b";
-import { SampleEditor } from "../../ui/sample-editor.js?v=6afdd2300d9b";
+import { InstrumentStatus } from "../../ui/status.js?v=f1d1aaff72ac";
+import { SampleEditor } from "../../ui/sample-editor.js?v=f1d1aaff72ac";
 import { useState } from "react";
-import { createDrums, TRACKS } from "./drums.js?v=6afdd2300d9b";
-import { DRUM_BINDINGS } from "./drum-notes.js?v=6afdd2300d9b";
-import { SAMPLE_BINDINGS } from "./drum-samples.js?v=6afdd2300d9b";
-import { at } from "../../core/guards.js?v=6afdd2300d9b";
-import { useController } from "../../ui/hooks.js?v=6afdd2300d9b";
-import { Header, PlaybackControls, SectionSelector, } from "../../ui/controls.js?v=6afdd2300d9b";
-import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=6afdd2300d9b";
-import { NoteGrid } from "../../ui/grid.js?v=6afdd2300d9b";
+import { createDrums, TRACKS } from "./drums.js?v=f1d1aaff72ac";
+import { DRUM_BINDINGS } from "./drum-notes.js?v=f1d1aaff72ac";
+import { SAMPLE_BINDINGS } from "./drum-samples.js?v=f1d1aaff72ac";
+import { at } from "../../core/guards.js?v=f1d1aaff72ac";
+import { useController } from "../../ui/hooks.js?v=f1d1aaff72ac";
+import { Header, PlaybackControls, SectionSelector, } from "../../ui/controls.js?v=f1d1aaff72ac";
+import { Keyboard, useKeyboard } from "../../ui/keyboard.js?v=f1d1aaff72ac";
+import { NoteGrid } from "../../ui/grid.js?v=f1d1aaff72ac";
 export function Drums() {
     const model = useController(createDrums), keyboard = useKeyboard(model);
     const [keys, setKeys] = useState(false), busy = model.recordState !== "idle", editingSlot = model.editingSlot, editedSample = editingSlot === null ? null : model.samples[editingSlot];

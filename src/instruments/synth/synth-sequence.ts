@@ -1,3 +1,4 @@
+import { putNote } from "../../core/melodic-sequence.js";
 import type { ADSR } from "../../core/envelope.js";
 import { SECTION_STEPS, sectionPosition } from "../../core/sections.js";
 import { at, isRecord, isInteger, isNumber } from "../../core/guards.js";
@@ -61,35 +62,7 @@ export const DEFAULT_WAVE: Record<SynthSound, Waveform> = {
   bass: "sine",
   lead: "square",
 };
-export function noteAt(
-  notes: readonly SynthNote[],
-  row: number,
-  column: number,
-): SynthNote | undefined {
-  return notes.find(
-    (note) =>
-      note.row === row &&
-      column >= note.start &&
-      column < note.start + note.length,
-  );
-}
-export function putNote(
-  notes: readonly SynthNote[],
-  row: number,
-  start: number,
-  length: number,
-): SynthNote[] {
-  const next = { row, start, length: Math.min(length, SYNTH_STEPS - start) };
-  return [
-    ...notes.filter(
-      (note) =>
-        note.row !== row ||
-        note.start + note.length <= start ||
-        note.start >= start + next.length,
-    ),
-    next,
-  ];
-}
+export { noteAt, putNote } from "../../core/melodic-sequence.js";
 const RANGES: readonly (readonly [keyof SynthParameters, number, number])[] = [
   ["cutoff", 20, 10000],
   ["resonance", 0, 12],

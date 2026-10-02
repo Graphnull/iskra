@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from "react";
-import { FocusIndicator } from "./focus.js?v=6afdd2300d9b";
+import { FocusIndicator } from "./focus.js?v=f1d1aaff72ac";
 export function Header({ title, view, onToggle, alternateLabel = "Клавиши", }) {
     return (_jsxs("header", { className: "heading", children: [_jsx("div", { children: _jsx("h1", { id: "title", children: title }) }), _jsxs("div", { className: "live-actions", children: [_jsx(FocusIndicator, {}), onToggle && (_jsx("button", { type: "button", className: "view-toggle", "aria-pressed": view !== "grid", onClick: onToggle, children: view === "grid" ? alternateLabel : "Сетка" }))] })] }));
 }

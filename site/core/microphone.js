@@ -1,4 +1,4 @@
-import { isRecord, at } from "./guards.js?v=6afdd2300d9b";
+import { isRecord, at } from "./guards.js?v=f1d1aaff72ac";
 export function microphoneError(error) {
     const detail = isRecord(error) ? error : {};
     if (detail.name === "NotAllowedError" || detail.name === "SecurityError")

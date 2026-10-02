@@ -17,6 +17,7 @@ interface GridProps {
   onEdit(row: number, column: number, length?: number): void;
   hidden?: boolean;
   activeLabels?: readonly string[];
+  ariaLabel?: string;
 }
 const OFFSETS: Partial<Record<string, readonly [number, number]>> = {
   ArrowLeft: [0, -1],
@@ -34,6 +35,7 @@ export function NoteGrid({
   onEdit,
   hidden = false,
   activeLabels = [],
+  ariaLabel,
 }: GridProps) {
   const [focused, setFocused] = useState(0);
   const [preview, setPreview] = useState<{
@@ -55,6 +57,7 @@ export function NoteGrid({
     previous.current = selected;
     drag.current = null;
   }
+  if (hidden) drag.current = null;
   return (
     <div
       className={
@@ -64,11 +67,12 @@ export function NoteGrid({
       }
       role="group"
       aria-label={
-        kind === "synth"
+        ariaLabel ??
+        (kind === "synth"
           ? "Ноты синтезатора"
           : kind === "drum"
             ? "Восемь ударных и четыре семпла, шестнадцать шагов"
-            : "Сетка нот: 16 шагов, 16 высот"
+            : "Сетка нот: 16 шагов, 16 высот")
       }
       hidden={hidden}
       onPointerDown={(event) => {

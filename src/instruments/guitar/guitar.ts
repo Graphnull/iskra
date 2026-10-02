@@ -1,3 +1,4 @@
+import { pluckedBuffer } from "../../core/plucked-string.js";
 import { audioContext } from "../../core/dom.js";
 import { createObservable } from "../../core/observable.js";
 import { STRING_KEYS, stringMidi } from "./guitar-notes.js";
@@ -30,23 +31,7 @@ export function createGuitar() {
       const audio = context;
       await audio.resume();
       if (disposed) return;
-      // Karplus–Strong: a short excitation circulates through a damped string.
-      const frequency = 440 * 2 ** ((midi - 69) / 12);
-      const period = Math.max(
-        2,
-        Math.round(audio.sampleRate / frequency - 0.5),
-      );
-      const buffer = audio.createBuffer(
-        1,
-        Math.ceil(audio.sampleRate * 4),
-        audio.sampleRate,
-      );
-      const samples = buffer.getChannelData(0);
-      for (let i = 0; i < period; i++)
-        samples[i] = (Math.random() * 2 - 1) * strength * 0.6;
-      for (let i = period; i < samples.length; i++)
-        samples[i] =
-          0.497 * ((samples[i - period] ?? 0) + (samples[i - period + 1] ?? 0));
+      const buffer = pluckedBuffer(audio, midi, strength);
       const source = audio.createBufferSource();
       source.buffer = buffer;
       source.connect(audio.destination);
@@ -104,6 +89,7 @@ export function createGuitar() {
       fingers.set(pointer, { string, fret: position });
       observable.notify();
     },
+    releaseAll: releaseFingers,
     release(pointer: number) {
       fingers.delete(pointer);
       observable.notify();

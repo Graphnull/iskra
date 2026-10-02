@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { MelodicPanel } from "../../ui/melodic-panel.js";
+import { useRef, useState } from "react";
 import { Header } from "../../ui/controls.js";
 import { useController } from "../../ui/hooks.js";
 import { InstrumentStatus } from "../../ui/status.js";
@@ -12,16 +13,32 @@ import {
 export function Guitar() {
   const model = useController(createGuitar);
   const strokes = useRef(new Map<number, number>());
+  const [grid, setGrid] = useState(false);
   return (
     <main className="piano guitar-instrument" aria-labelledby="title">
-      <Header title="Гитара" />
-      <div className="guitar-toolbar">
+      <Header
+        title="Гитара"
+        view={grid ? "grid" : "keys"}
+        alternateLabel="Гриф"
+        onToggle={() => {
+          model.clear();
+          strokes.current.clear();
+          setGrid(!grid);
+        }}
+      />
+      <MelodicPanel instrument="guitar" hidden={!grid} />
+      <div className="guitar-toolbar" hidden={grid}>
         <span>Стандартный строй · 6 струн</span>
         <button type="button" onClick={model.clear}>
           Сброс
         </button>
       </div>
-      <div className="guitar-neck" role="group" aria-label="Зажатия на грифе">
+      <div
+        className="guitar-neck"
+        hidden={grid}
+        role="group"
+        aria-label="Зажатия на грифе"
+      >
         <div className="guitar-fret-number" aria-hidden="true">
           Лад
         </div>
@@ -71,6 +88,7 @@ export function Guitar() {
       </div>
       <div
         className="guitar-strum"
+        hidden={grid}
         role="group"
         aria-label="Проведи поперёк струн для боя"
         onPointerDown={(event) => {
