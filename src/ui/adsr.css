@@ -1,0 +1,81 @@
+.envelope-axis {
+  fill: none;
+  stroke: #77746b;
+  stroke-width: 1;
+}
+
+.adsr-editor {
+  position: relative;
+  grid-column: 1 / -1;
+  min-width: 0;
+  min-height: 0;
+  touch-action: none;
+}
+
+.adsr-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.adsr-path {
+  fill: none;
+  stroke: #dc827a;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.adsr-svg text {
+  fill: #bcbab2;
+  font-size: 9px;
+}
+
+.adsr-svg .adsr-hint {
+  font-size: 7px;
+}
+
+.adsr-handle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #191918;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.adsr-handle > span {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin: auto;
+  border: 1px solid #f3c3bc;
+  border-radius: 50%;
+  background: #dc827a;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.adsr-sustain {
+  cursor: ns-resize;
+}
+
+.adsr-handle:focus-visible {
+  outline: 2px solid #dc827a;
+  outline-offset: 0;
+}
+
+[data-theme="light"] .adsr-svg text {
+  fill: #646259;
+}
+
+[data-theme="light"] .adsr-handle > span {
+  border-color: #a85f57;
+}

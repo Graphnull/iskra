@@ -1,0 +1,68 @@
+.record-large:focus-visible {
+  outline: 2px solid #dc827a;
+  outline-offset: 1px;
+}
+
+.record-large.is-recording {
+  background: #89534f;
+  border-color: #dc827a;
+  color: #fff;
+}
+
+.recorder-panel p {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.record-large {
+  width: 100%;
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #dc827a;
+  border-radius: 12px;
+  background: #343432;
+  color: #f3f2ed;
+  font: inherit;
+  cursor: pointer;
+}
+
+[data-theme="light"] .record-large {
+  background: #fcfbf7;
+  border-color: #bdb9ad;
+  color: #39382f;
+}
+
+[data-theme="light"] .is-recording {
+  background: #d4a29c;
+  border-color: #a85f57;
+}
+.recorder-panel.is-editing {
+  height: min(100dvh, 600px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+}
+.recorder-panel.is-editing h1 {
+  font-size: 18px;
+}
+.recorder-panel.is-editing > p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 12px;
+}
+.sample-save {
+  flex-shrink: 0;
+  padding: 6px;
+  border: 1px solid #85bd96;
+  border-radius: 6px;
+  background: #b4e5c1;
+  color: #172a22;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.sample-save:focus-visible {
+  outline: 2px solid #dc827a;
+  outline-offset: 1px;
+}

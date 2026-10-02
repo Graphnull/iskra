@@ -1,0 +1,16 @@
+.instrument-status,
+.recorder-panel .instrument-status,
+.recorder-panel.is-editing > .instrument-status {
+  margin: 6px 0 0;
+  color: #bcbab2;
+  font-size: 9px;
+  line-height: 12px;
+  text-align: left;
+  min-height: 12px;
+  max-height: 36px;
+  overflow: auto;
+  flex-shrink: 0;
+}
+[data-theme="light"] .instrument-status {
+  color: #77746b;
+}

@@ -1,0 +1,36 @@
+.melodic-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 6px;
+  margin-top: 8px;
+}
+.melodic-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 10px;
+  color: #b9b8af;
+}
+.melodic-tools label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.melodic-tools input {
+  width: 46px;
+  padding: 4px 6px;
+  border: 1px solid #62625a;
+  border-radius: 8px;
+  background: #242422;
+  color: inherit;
+  font: inherit;
+}
+[data-theme="light"] .melodic-tools {
+  color: #737167;
+}
+[data-theme="light"] .melodic-tools input {
+  background: #faf9f5;
+  border-color: #c3bfb2;
+}

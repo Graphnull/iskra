@@ -1,0 +1,28 @@
+.piano-keyboard {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+  margin-top: 8px;
+}
+.piano-keyboard .octave {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.piano-keyboard .octave + .octave {
+  margin-top: 0;
+}
+.piano-keyboard .keyboard {
+  height: auto;
+  flex: 1;
+  min-height: 0;
+}
+.piano-keyboard .octave-heading {
+  flex-shrink: 0;
+  font-size: 8px;
+  line-height: 10px;
+  letter-spacing: 0.08em;
+}

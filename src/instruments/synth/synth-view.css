@@ -1,0 +1,114 @@
+.synth-tools,
+.sample-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  flex-shrink: 0;
+}
+
+.synth-tools label,
+.sample-controls label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: #bcbab2;
+}
+
+.synth-tools select,
+.synth-tools input,
+.sample-controls select,
+.sample-controls button {
+  height: 23px;
+  min-width: 0;
+  border: 1px solid #60605a;
+  border-radius: 6px;
+  background: #2b2b29;
+  color: #f2f1ea;
+  font: inherit;
+  font-size: 10px;
+}
+
+.synth-tools select {
+  width: 38px;
+}
+
+.synth-tools input[type="number"] {
+  width: 35px;
+}
+
+.synth-tools .filter-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.synth-tools input[type="range"] {
+  flex: 1;
+  width: 50px;
+  accent-color: #dc827a;
+}
+
+.sample-controls {
+  flex-wrap: wrap;
+}
+
+.sample-controls button {
+  padding: 0 7px;
+  cursor: pointer;
+}
+
+.sample-controls select {
+  width: 46px;
+}
+
+.sample-controls input {
+  accent-color: #dc827a;
+  margin: 0;
+}
+
+.sample-status {
+  margin: 0 0 5px;
+  color: #bcbab2;
+  font-size: 9px;
+  line-height: 11px;
+  max-height: 33px;
+  overflow: auto;
+  flex-shrink: 0;
+}
+
+.synth button:focus-visible,
+.synth select:focus-visible,
+.synth input:focus-visible {
+  outline: 2px solid #dc827a;
+  outline-offset: 1px;
+}
+
+.sample-controls .is-recording {
+  background: #89534f;
+  border-color: #dc827a;
+  color: #fff;
+}
+
+[data-theme="light"] .synth-tools label,
+[data-theme="light"] .sample-controls label,
+[data-theme="light"] .sample-status {
+  color: #646259;
+}
+
+[data-theme="light"] .synth-tools select,
+[data-theme="light"] .synth-tools input,
+[data-theme="light"] .sample-controls select,
+[data-theme="light"] .sample-controls button {
+  background: #fcfbf7;
+  border-color: #bdb9ad;
+  color: #39382f;
+}
+
+.synth-tools .wave-control {
+  flex: 1;
+}
+
+.synth-tools .wave-control select {
+  width: 100%;
+}

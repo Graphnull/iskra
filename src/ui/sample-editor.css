@@ -1,0 +1,92 @@
+.sample-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid #60605a;
+  border-radius: 12px;
+  background: #222220;
+}
+.sample-editor header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.sample-editor button {
+  border: 1px solid #60605a;
+  border-radius: 6px;
+  background: #343432;
+  color: #f2f1ea;
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.sample-wave {
+  width: 100%;
+  flex: 1;
+  min-height: 40px;
+  background: #191918;
+  border-radius: 6px;
+  touch-action: none;
+  cursor: crosshair;
+}
+.sample-wave-bars {
+  fill: none;
+  stroke: #b4e5c1;
+  stroke-width: 1.5;
+}
+.sample-wave-skipped {
+  fill: #222220;
+  opacity: 0.75;
+}
+.sample-wave-start {
+  fill: none;
+  stroke: #dc827a;
+  stroke-width: 2;
+}
+.sample-editor label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px;
+  font-size: 11px;
+}
+.sample-editor output {
+  text-align: right;
+  color: #bcbab2;
+  font-variant-numeric: tabular-nums;
+}
+.sample-editor input {
+  grid-column: 1/-1;
+  width: 100%;
+  margin: 0;
+  accent-color: #dc827a;
+}
+.sample-editor :is(button, input):focus-visible {
+  outline: 2px solid #dc827a;
+  outline-offset: 1px;
+}
+[data-theme="light"] .sample-editor {
+  background: #eeede8;
+  border-color: #bdb9ad;
+}
+[data-theme="light"] .sample-editor button {
+  background: #fcfbf7;
+  color: #39382f;
+  border-color: #bdb9ad;
+}
+[data-theme="light"] .sample-wave {
+  background: #dedbd2;
+}
+[data-theme="light"] .sample-wave-bars {
+  stroke: #348b44;
+}
+[data-theme="light"] .sample-wave-skipped {
+  fill: #dedbd2;
+}
+[data-theme="light"] .sample-editor output {
+  color: #646259;
+}

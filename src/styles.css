@@ -1,0 +1,23 @@
+/* Styles are owned by components; this file only defines their load order. */
+@import "./styles/base.css";
+@import "./styles/layout.css";
+@import "./ui/controls.css";
+@import "./ui/focus.css";
+@import "./ui/keyboard.css";
+@import "./ui/grid.css";
+@import "./ui/adsr.css";
+@import "./instruments/piano/piano-view.css";
+@import "./instruments/tenorion/tenorion-view.css";
+@import "./instruments/drums/drums-view.css";
+@import "./instruments/synth/synth-view.css";
+@import "./instruments/recorder/recorder-view.css";
+@import "./instruments/synth/synth-panel.css";
+@import "./ui/sample-editor.css";
+
+@import "./instruments/looper/looper-view.css";
+
+@import "./ui/status.css";
+
+@import "./instruments/guitar/guitar-view.css";
+
+@import "./ui/melodic-panel.css";
