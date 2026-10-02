@@ -1,7 +1,7 @@
 import { createLooper } from "./looper.js";
 import { useController } from "../../ui/hooks.js";
 import { Header, PlaybackControls } from "../../ui/controls.js";
-function waveform(buffer: AudioBuffer | null): string {
+function waveform(buffer: AudioBuffer | null, gain: number): string {
   if (!buffer) return "";
   const data = buffer.getChannelData(0),
     count = 96,
@@ -14,7 +14,8 @@ function waveform(buffer: AudioBuffer | null): string {
       j += Math.max(1, Math.floor(stride / 64))
     )
       peak = Math.max(peak, Math.abs(data[j] ?? 0));
-    return `M ${i} ${20 - peak * 18} L ${i} ${20 + peak * 18}`;
+    const amplitude = Math.min(1, peak * gain) * 18;
+    return `M ${i} ${20 - amplitude} L ${i} ${20 + amplitude}`;
   }).join(" ");
 }
 export function Looper() {
@@ -129,7 +130,7 @@ export function Looper() {
                 aria-label={`Звук слоя ${index + 1}`}
                 role="img"
               >
-                <path d={waveform(layer.buffer)} />
+                <path d={waveform(layer.buffer, layer.gain)} />
                 <line
                   x1={model.progress * 96}
                   x2={model.progress * 96}
