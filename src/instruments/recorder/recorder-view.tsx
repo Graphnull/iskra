@@ -161,9 +161,6 @@ export function Recorder() {
   }
   return (
     <main className={`piano recorder-panel${clip ? " is-editing" : ""}`}>
-      <p className="eyebrow" hidden={!!clip}>
-        СВОЙ ЗВУК
-      </p>
       <h1>{clip ? "Настроить запись" : "Записать семпл"}</h1>
       <p hidden={!!clip}>Запиши голос или любой звук — до 10 секунд.</p>
       <button
