@@ -1,0 +1,152 @@
+.guitar-instrument {
+  gap: 8px;
+}
+.guitar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: #b9b8af;
+}
+.guitar-toolbar button {
+  padding: 6px 12px;
+  border: 1px solid #66665e;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+}
+.guitar-neck {
+  flex: 3;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 22px repeat(6, minmax(0, 1fr));
+  grid-template-rows: 24px repeat(5, minmax(0, 1fr));
+  background: #242421;
+  border: 1px solid #626259;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.guitar-fret {
+  display: contents;
+}
+.guitar-fret-number {
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  color: #a3a297;
+}
+.guitar-open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+}
+.guitar-point {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid #77756b;
+  touch-action: none;
+  padding: 0;
+}
+.guitar-point::before {
+  content: "";
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  background: #96938788;
+}
+.guitar-point span {
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #8c887a;
+  border-radius: 50%;
+  background: #343430;
+}
+.guitar-point.is-held span {
+  background: #df8a80;
+  border-color: #ffb4a9;
+  box-shadow: 0 0 12px #df8a8033;
+}
+.guitar-strum {
+  flex: 2;
+  min-height: 70px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 0;
+  margin-left: 22px;
+  border: 1px solid #626259;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at center, #383831, #252522);
+  touch-action: none;
+  overflow: hidden;
+}
+.guitar-string {
+  position: relative;
+  border: 0;
+  background: transparent;
+  color: #b9b8af;
+  padding: 0;
+  touch-action: none;
+}
+.guitar-string-wire {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #8b897c, #d5d0b8, #777569);
+  box-shadow: 1px 0 2px #0006;
+}
+.guitar-key {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  background: #292925;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.guitar-string.is-ringing .guitar-string-wire {
+  background: #e99a8e;
+  animation: string-vibrate 0.07s linear infinite alternate;
+}
+@keyframes string-vibrate {
+  from {
+    transform: translateX(-2px);
+  }
+  to {
+    transform: translateX(2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guitar-string.is-ringing .guitar-string-wire {
+    animation: none;
+  }
+}
+[data-theme="light"] .guitar-toolbar {
+  color: #737167;
+}
+[data-theme="light"] .guitar-neck {
+  background: #faf9f5;
+  border-color: #c3bfb2;
+}
+[data-theme="light"] .guitar-point span {
+  background: #ece9df;
+}
+[data-theme="light"] .guitar-point.is-held span {
+  background: #d67c72;
+  border-color: #b76159;
+}
+[data-theme="light"] .guitar-strum {
+  background: radial-gradient(ellipse at center, #f9f7ed, #e8e4d7);
+  border-color: #c3bfb2;
+}
+[data-theme="light"] .guitar-key {
+  color: #696558;
+  background: #efecdf;
+}

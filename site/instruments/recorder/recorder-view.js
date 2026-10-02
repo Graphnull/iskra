@@ -1,12 +1,12 @@
 import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { InstrumentStatus } from "../../ui/status.js?v=a5f3c549b024";
+import { InstrumentStatus } from "../../ui/status.js?v=6afdd2300d9b";
 import { useEffect, useRef, useState } from "react";
-import { createMicrophone, microphoneError } from "../../core/microphone.js?v=a5f3c549b024";
-import { isRecord } from "../../core/guards.js?v=a5f3c549b024";
-import { audioContext } from "../../core/dom.js?v=a5f3c549b024";
-import { restoreSampleSettings } from "../../core/sample-edit.js?v=a5f3c549b024";
-import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=a5f3c549b024";
-import { SampleEditor } from "../../ui/sample-editor.js?v=a5f3c549b024";
+import { createMicrophone, microphoneError } from "../../core/microphone.js?v=6afdd2300d9b";
+import { isRecord } from "../../core/guards.js?v=6afdd2300d9b";
+import { audioContext } from "../../core/dom.js?v=6afdd2300d9b";
+import { restoreSampleSettings } from "../../core/sample-edit.js?v=6afdd2300d9b";
+import { decodeDrumSample, drumSampleVoice } from "../drums/drum-samples.js?v=6afdd2300d9b";
+import { SampleEditor } from "../../ui/sample-editor.js?v=6afdd2300d9b";
 export function Recorder() {
     const [state, setState] = useState("idle"), [seconds, setSeconds] = useState(0), [status, setStatus] = useState(""), [clip, setClip] = useState(null), [settings, setSettings] = useState({ gain: 1, start: 0 }), [sending, setSending] = useState(false);
     const microphone = useRef(null), context = useRef(null), voices = useRef(new Set());

@@ -1,6 +1,6 @@
-import { audioContext as createAudioContext } from "../../core/dom.js?v=a5f3c549b024";
-import { createObservable } from "../../core/observable.js?v=a5f3c549b024";
-export { buildKeyMap } from "../../core/keyboard-map.js?v=a5f3c549b024";
+import { audioContext as createAudioContext } from "../../core/dom.js?v=6afdd2300d9b";
+import { createObservable } from "../../core/observable.js?v=6afdd2300d9b";
+export { buildKeyMap } from "../../core/keyboard-map.js?v=6afdd2300d9b";
 export function releaseVoice(voice, now) {
     voice.release.gain.setValueAtTime(1, now);
     voice.release.gain.exponentialRampToValueAtTime(0.001, now + 0.75);

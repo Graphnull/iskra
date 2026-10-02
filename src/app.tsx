@@ -9,10 +9,12 @@ import { Drums } from "./instruments/drums/drums-view.js";
 import { Synth } from "./instruments/synth/synth-view.js";
 import { Recorder } from "./instruments/recorder/recorder-view.js";
 import { Looper } from "./instruments/looper/looper-view.js";
+import { Guitar } from "./instruments/guitar/guitar-view.js";
 const MODES: Record<
   string,
   { View: ComponentType; title: string; sequencer: boolean }
 > = {
+  guitar: { View: Guitar, title: "Гитара", sequencer: false },
   piano: { View: Piano, title: "Пианино на клавиатуре", sequencer: false },
   tenorion: {
     View: Tenorion,
